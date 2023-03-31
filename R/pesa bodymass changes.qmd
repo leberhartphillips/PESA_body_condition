@@ -155,17 +155,11 @@ g1 + g2
 
 ```
 
-
-
-
-
-
-
-
 ### Paternity and body mass change
 
 ```{r}
 x = merge(wcap, pat, by = c("ID", "year_"))
+x = merge(x, ten, by = c("ID", "year_"))
 
 ggplot(x, aes(y = N_young, x = delta_weight)) +
   geom_point() +
@@ -173,6 +167,10 @@ ggplot(x, aes(y = N_young, x = delta_weight)) +
 
 glm(N_young ~ weight_1 + delta_weight, poisson, x) |>
 tbl_regression(intercept = TRUE)
+
+glm(N_young ~ tenureDays + weight_1 + delta_weight, poisson, x) |>
+tbl_regression(intercept = TRUE)
+
 
 
 
