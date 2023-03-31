@@ -13,78 +13,31 @@ execute:
 
 ```{r, settings_data}
 
-sapply(
-c('data.table', 'dbo',
-'stringr','here','glue', 
-'ggplot2', "glmmTMB", "gtsummary"),
+sapply( c('ggplot2', "glmmTMB", "gtsummary", "ggeffects", "patchwork"),
 require, character.only = TRUE, quietly = TRUE)
 
-# 
+
+source( here::here("R/DAT/PESA_breeding_study_2005_2009.R"))
 
 
 ```
 
-## Dataset
-```{r}
 
-d = dbq(q = "SELECT DISTINCT c.year_, c.ID, start_capture_date_time capdt, gps_date_time gpsdt, weight, 
-                totalHead, tarsus, wing  
-              FROM PESAatBARROW.CAPTURES c, 
-              PESAatBARROW.SEX s
-                WHERE
-                  c.year_ between 2005 and 2009 AND -- subset  for breeding study seasons
-                  s.ID = c.ID AND
-                  s.sex = 1  -- males
-                  ")
-
-# Paternity (note q = , and no con object as an alternative way of using dbq)
-p = dbq(q = "SELECT count(IDchick) paternity_gain, IDfather ID, year_ FROM 
-              PESAatBARROW.PATERNITY  WHERE
-                 IDfather is not NULL  
-                   GROUP BY  IDfather, year_ ")
-p[, paternity_gain := as.integer(paternity_gain)]
-
-# n by ID & year
-d[, n := .N, .(year_, ID)]
-
-# only keep males measured twice
-d = d[n > 1 & !is.na(weight)]
-d[, n:= NULL]
-
-# gps dt is missing for 3 individuals (we'll use capture dt)
-d[is.na(gpsdt), gpsdt := capdt]
-
-# rank id by time of capture
-setorder(d, year_, ID, capdt)
-d[, capture_id := 1:.N, .(ID, year_)]
-
-
-# transform to wide format
-w = dcast(d, ID + year_  ~ capture_id, value.var = c("weight", "gpsdt") )
-
-w[, delta_weight := weight_2 - weight_1]
-w[, delta_time := difftime(gpsdt_2, gpsdt_1, units = "days")]
-
-head(w, 3) |>
-knitr::kable()
-
-
-```
 ## EDA on body mass
 ```{r}
 
-ggplot(d, aes(y = weight, x = factor(year_)) ) + 
+ggplot(cap, aes(y = weight, x = factor(year_)) ) + 
 geom_boxplot()
 
-ggplot(d, aes(y = weight, x = capture_id, group = ID) ) + 
+ggplot(cap, aes(y = weight, x = capture_id, group = ID) ) + 
 facet_wrap(~year_) + 
 geom_smooth(method = lm, se = FALSE)
 
 
-ggplot(w, aes(delta_weight)) +
+ggplot(wcap, aes(delta_weight)) +
   geom_histogram()
 
-ggplot(w, aes(y = delta_weight, x = delta_time) ) +
+ggplot(wcap, aes(y = delta_weight, x = delta_time) ) +
   geom_point() + 
   geom_smooth()
 
@@ -93,38 +46,136 @@ ggplot(w, aes(y = delta_weight, x = delta_time) ) +
 
 ## Paternity
 
-
-
 ### Paternity and body mass
 Subset of males that sired at least one young
 
 ```{r}
-#using first capture
-x = merge(d[capture_id == 1], p, by = c("ID", "year_"))
-x = merge(d, p, by = c("ID", "year_"))
+x = merge(cap, pat, by = c("ID", "year_"))
 
-
-
-ggplot(x, aes(y = paternity_gain, x = weight)) +
+ggplot(x, aes(y = N_females, x = weight)) +
   geom_point() 
 
-glmmTMB(paternity_gain ~ weight + (1|year_), family = poisson, x) |>
+glmmTMB(N_females ~ weight + (1|year_), family = poisson, x) |>
+tbl_regression(intercept = TRUE)
+
+
+ggplot(x, aes(y = N_young, x = weight)) +
+  geom_point() 
+
+glmmTMB(N_young ~ weight + (1|year_), family = poisson, x) |>
+tbl_regression(intercept = TRUE)
+
+```
+
+### Paternity and body mass
+All males
+
+
+```{r}
+#using first capture
+x = merge(cap, pat, by = c("ID", "year_"), all.x = TRUE)
+x[is.na(N_females), N_females := 0]
+x[is.na(N_young), N_young := 0]
+
+
+ggplot(x, aes(y = N_females, x = weight)) +
+  geom_point() 
+
+glmmTMB(N_females ~ weight + (1|year_), zi=~weight, family = poisson, x) |>
+tbl_regression(intercept = TRUE)
+
+
+ggplot(x, aes(y = N_young, x = weight)) +
+  geom_point() 
+
+glmmTMB(N_young ~ weight + (1|year_), zi=~weight, family = poisson, x) |>
 tbl_regression(intercept = TRUE)
 
 ```
 
 
 
+
+### Paternity and tenure
+
+
+```{r}
+x <- merge(cap, pat, by = c("ID", "year_"), all.x = TRUE)
+x[is.na(N_females), N_females := 0]
+x[is.na(N_young), N_young := 0]
+
+x = merge(x, ten, by= c('ID', "year_"))
+
+
+fm = glmmTMB(N_females ~ tenureDays + (1|year_), family = poisson, x)
+
+tbl_regression(fm , intercept = TRUE)
+
+ggeffect(fm) |> plot()
+
+
+fm = glmmTMB(N_young ~ tenureDays + (1|year_), family = poisson, x)
+tbl_regression(fm, intercept = TRUE)
+
+ggeffect(fm) |> plot()
+
+
+```
+
+
+### Paternity, tenure and body mass
+
+
+```{r}
+x <- merge(cap, pat, by = c("ID", "year_"), all.x = TRUE)
+x[is.na(N_females), N_females := 0]
+x[is.na(N_young), N_young := 0]
+
+x = merge(x, ten, by= c('ID', "year_"))
+
+
+fm = glmmTMB(N_females ~ weight + tenureDays + (1|year_), family = poisson, x)
+
+tbl_regression(fm , intercept = TRUE)
+
+g1 = ggeffect(fm, "weight") |> plot()
+g2 = ggeffect(fm, "tenureDays") |> plot()
+
+g1 + g2
+
+
+fm = glmmTMB(N_young ~ weight + tenureDays + (1 | year_), family = poisson, x)
+tbl_regression(fm, intercept = TRUE)
+
+g1 <- ggeffect(fm, "weight") |> plot()
+g2 <- ggeffect(fm, "tenureDays") |> plot()
+
+g1 + g2
+
+
+```
+
+
+
+
+
+
+
+
 ### Paternity and body mass change
 
 ```{r}
-x = merge(w, p, by = c("ID", "year_"))
+x = merge(wcap, pat, by = c("ID", "year_"))
 
-ggplot(x, aes(y = paternity_gain, x = delta_weight)) +
+ggplot(x, aes(y = N_young, x = delta_weight)) +
   geom_point() +
   geom_smooth(method = lm)
 
-glm(paternity_gain ~ weight_1 + delta_weight, poisson, x) |>
+glm(N_young ~ weight_1 + delta_weight, poisson, x) |>
 tbl_regression(intercept = TRUE)
+
+
+
+
 
 ```
