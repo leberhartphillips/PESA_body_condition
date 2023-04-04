@@ -59,11 +59,14 @@ cap_05_09_std <-
   mutate(gpsdt_std = gpsdt_since_year_start - mean_date) %>% 
   group_by(capture_id) %>% 
   arrange(capture_id, gpsdt_since_year_start) %>% 
-  mutate(measure_deviation = gpsdt_std - gpsdt_std[which.min(gpsdt_std)],
-         first_measure = gpsdt_std[which.min(gpsdt_std)],
-         last_measure = gpsdt_std[which.max(gpsdt_std)]) %>% 
-  dplyr::select(year_, capture_id, gpsdt, measure_deviation, first_measure, 
-                last_measure, weight, culmen, totalHead, tarsus,  wing, n_by_id)
+  mutate(date_deviance = gpsdt_std - gpsdt_std[which.min(gpsdt_std)],
+         date_deviance2 = gpsdt_std - mean(gpsdt_std),
+         mean_date = mean(gpsdt_std),
+         first_date = gpsdt_std[which.min(gpsdt_std)],
+         last_date = gpsdt_std[which.max(gpsdt_std)]) %>% 
+  dplyr::select(year_, capture_id, gpsdt, date_deviance, date_deviance2, 
+                mean_date, first_date, last_date, weight, culmen, 
+                totalHead, tarsus,  wing, n_by_id)
 
 # PCA of static body structural measurements (culmen, totalHead, tarsus, wing)
 static_measures_pca <-
@@ -120,30 +123,43 @@ cap_05_09_std_pca %>%
 
 # model
 # mod_weight_PC1 <-
-#   lmer(weight ~ structure_pc1 + measure_deviation + first_measure +
+#   lmer(weight ~ structure_pc1 + date_deviance + first_date +
 #          (1 | capture_id),
 #        data = cap_05_09_std_pca)
 
-mod_weight_wing <-
-  lmer(weight ~ wing + measure_deviation + first_measure + last_measure +
+mod_weight <-
+  lmer(weight ~ wing + date_deviance + first_date + last_date +
          (1 | capture_id),
        data = cap_05_09_std_pca)
 
+# mod_weight_wing2 <-
+#   lmer(weight ~ wing + date_deviance2 + mean_date +
+#          (1 | capture_id),
+#        data = cap_05_09_std_pca)
+
 # model summary a diagnostics
-summary(mod_weight_wing)
-plot(allEffects(mod_weight_wing))
-coefplot2(mod_weight_wing)
-summary(glht(mod_weight_wing))
+summary(mod_weight)
+plot(allEffects(mod_weight))
+coefplot2(mod_weight)
+summary(glht(mod_weight))
+
+# summary(mod_weight_wing2)
+# plot(allEffects(mod_weight_wing2))
+# coefplot2(mod_weight_wing2)
+# summary(glht(mod_weight_wing2))
 
 # tidy_mod_weight_PC1 <-
 #   tidy(mod_weight, conf.int = TRUE, conf.method = "boot", nsim = 1000)
 
-tidy_mod_weight_wing <-
-  tidy(mod_weight_wing, conf.int = TRUE, conf.method = "boot", nsim = 1000)
+tidy_mod_weight <-
+  tidy(mod_weight, conf.int = TRUE, conf.method = "boot", nsim = 1000)
+
+# tidy_mod_weight_wing2 <-
+#   tidy(mod_weight_wing2, conf.int = TRUE, conf.method = "boot", nsim = 1000)
 
 # run rptR to obtain repeatabilities of random effects
-rpt_mod_weight_wing <-
-  rpt(weight ~ wing + measure_deviation + first_measure + last_measure +
+rpt_mod_weight <-
+  rpt(weight ~ wing + date_deviance + first_date + last_date +
         (1 | capture_id),
       grname = c("capture_id", "Fixed"),
       data = cap_05_09_std_pca,
@@ -151,49 +167,93 @@ rpt_mod_weight_wing <-
       nboot = 1000, npermut = 1000, ratio = TRUE,
       adjusted = TRUE, ncores = 4, parallel = TRUE)
 
+# rpt_mod_weight_wing2 <-
+#   rpt(weight ~ wing + date_deviance2 + mean_date +
+#         (1 | capture_id),
+#       grname = c("capture_id", "Fixed"),
+#       data = cap_05_09_std_pca,
+#       datatype = "Gaussian",
+#       nboot = 1000, npermut = 1000, ratio = TRUE,
+#       adjusted = TRUE, ncores = 4, parallel = TRUE)
+
 # run partR2 on each model to obtain marginal R2, parameter estimates, and beta
 # weights
-R2m_mod_weight_wing <-
-  partR2(mod_weight_wing,
+R2m_mod_weight <-
+  partR2(mod_weight,
          partvars = c("wing",
-                      "measure_deviation",
-                      "first_measure",
-                      "last_measure"),
+                      "date_deviance",
+                      "first_date",
+                      "last_date"),
          R2_type = "marginal",
          nboot = 1000,
          CI = 0.95,
          max_level = 1)
 
-R2c_mod_weight_wing <-
-  partR2(mod_weight_wing,
+R2c_mod_weight <-
+  partR2(mod_weight,
          partvars = c("wing",
-                      "measure_deviation",
-                      "first_measure",
-                      "last_measure"),
+                      "date_deviance",
+                      "first_date",
+                      "last_date"),
          R2_type = "conditional",
          nboot = 1000,
          CI = 0.95,
          max_level = 1)
 
-stats_mod_weight_wing <- 
-  list(mod = mod_weight_wing,
-       tidy = tidy_mod_weight_wing,
-       rptR = rpt_mod_weight_wing,
-       partR2m = R2m_mod_weight_wing,
-       partR2c = R2c_mod_weight_wing)
+# R2m_mod_weight_wing2 <-
+#   partR2(mod_weight_wing2,
+#          partvars = c("wing",
+#                       "date_deviance2",
+#                       "mean_date"),
+#          R2_type = "marginal",
+#          nboot = 1000,
+#          CI = 0.95,
+#          max_level = 1)
+# 
+# R2c_mod_weight_wing2 <-
+#   partR2(mod_weight_wing2,
+#          partvars = c("wing",
+#                       "date_deviance2",
+#                       "mean_date"),
+#          R2_type = "conditional",
+#          nboot = 1000,
+#          CI = 0.95,
+#          max_level = 1)
+mod_weight = mod_weight_wing
+tidy_mod_weight = tidy_mod_weight_wing
+rpt_mod_weight = rpt_mod_weight_wing
+R2m_mod_weight = R2m_mod_weight_wing
+R2c_mod_weight = R2c_mod_weight_wing
 
-save(stats_mod_weight_wing,
-     file = "R/output/stats_mod_weight_wing.rds")
+stats_mod_weight <- 
+  list(mod = mod_weight,
+       tidy = tidy_mod_weight,
+       rptR = rpt_mod_weight,
+       partR2m = R2m_mod_weight,
+       partR2c = R2c_mod_weight)
+
+# stats_mod_weight_wing2 <- 
+#   list(mod = mod_weight_wing2,
+#        tidy = tidy_mod_weight_wing2,
+#        rptR = rpt_mod_weight_wing2,
+#        partR2m = R2m_mod_weight_wing2,
+#        partR2c = R2c_mod_weight_wing2)
+
+# save(stats_mod_weight,
+#      file = "R/output/stats_mod_weight.rds")
+# save(stats_mod_weight_wing2,
+#      file = "R/output/stats_mod_weight_wing2.rds")
+
+load("R/output/stats_mod_weight.rds")
 
 # quick visualizations of model
-
-plot(allEffects(mod_weight_wing))
+plot(allEffects(stats_mod_weight_wing$mod))
 
 # Get the residuals
-resid <- residuals(mod_weight)
+resid <- residuals(stats_mod_weight_wing$mod)
 
 # Plot the residuals vs fitted values
-ggplot(data.frame(resid = resid, fitted = fitted(mod_weight)), aes(x = fitted, y = resid)) +
+ggplot(data.frame(resid = resid, fitted = fitted(stats_mod_weight_wing$mod)), aes(x = fitted, y = resid)) +
   geom_point() +
   labs(x = "Fitted Values", y = "Residuals") +
   ggtitle("Residuals vs Fitted Values")
@@ -237,6 +297,22 @@ mod_comp_names <-
                            "Within ind. temporal change",
                            "Between ind. effect of season (first measure)",
                            "Between ind. effect of season (last measure)",
+                           "Total Conditional \U1D479\U00B2",
+                           "Individual",
+                           "Residual",
+                           "Individual",
+                           "Residual",
+                           "Years",
+                           "Individuals",
+                           "Observations"))
+mod_comp_names <- 
+  data.frame(comp_name = c("Wing length",
+                           "Within ind. temporal change",
+                           "Between ind. effect of season",
+                           "Total Marginal \U1D479\U00B2",
+                           "Wing length",
+                           "Within ind. temporal change",
+                           "Between ind. effect of season",
                            "Total Conditional \U1D479\U00B2",
                            "Individual",
                            "Residual",
@@ -337,11 +413,13 @@ mod_weight_wing_table <-
              estimate = "Mean estimate",
              coefString = "95% confidence interval") %>% 
   fmt_number(columns = c(estimate),
-             rows = 1:14,
+             # rows = 1:14,
+             rows = 1:12,
              decimals = 2,
              use_seps = FALSE) %>% 
   fmt_number(columns = c(estimate),
-             rows = 15:17,
+             # rows = 15:17,
+             rows = 13:15,
              decimals = 0,
              use_seps = FALSE) %>% 
   sub_missing(columns = 1:4,
@@ -362,10 +440,10 @@ mod_weight_wing_table
 
 # export table to disk
 mod_weight_wing_table %>%
-  gtsave("mod_weight_wing_table.rtf", path = "R/products/tables/rtf/")
+  gtsave("mod_weight_wing_table2.rtf", path = "R/products/tables/rtf/")
 
 mod_weight_wing_table %>%
-  gtsave("mod_weight_wing_table.png", path = "R/products/tables/png/")
+  gtsave("mod_weight_wing_table2.png", path = "R/products/tables/png/")
 
 #### Forest plot of results ----
 # Standardized fixed effects
@@ -374,8 +452,9 @@ mod_weight_wing_forest_plot_fixef <-
   filter(str_detect(effect, "Fixed") & 
            term != "(Intercept)") %>%
   mutate(comp_name = fct_relevel(comp_name,
-                                 "Between ind. effect of season (last measure)",
-                                 "Between ind. effect of season (first measure)", 
+                                 # "Between ind. effect of season (last measure)",
+                                 # "Between ind. effect of season (first measure)", 
+                                 "Between ind. effect of season", 
                                  "Within ind. temporal change",
                                  "Wing length")) %>%
   ggplot() +
@@ -402,8 +481,9 @@ mod_weight_wing_forest_plot_partR2 <-
   allCoefs_mod %>%
   filter(str_detect(effect, "Partitioned") & str_detect(comp_name, "Conditional", negate = TRUE)) %>%
   mutate(comp_name = fct_relevel(comp_name,
-                                 "Between ind. effect of season (last measure)",
-                                 "Between ind. effect of season (first measure)", 
+                                 # "Between ind. effect of season (last measure)",
+                                 # "Between ind. effect of season (first measure)", 
+                                 "Between ind. effect of season", 
                                  "Within ind. temporal change",
                                  "Wing length",
                                  "Total Marginal \U1D479\U00B2")) %>%
@@ -421,8 +501,9 @@ mod_weight_wing_forest_plot_partR2 <-
              alpha = 1, stroke = 0.5) +
   luke_theme +
   theme(axis.title.x = element_text(size = 10, hjust = 0.5)) +
-  scale_y_discrete(labels = c("Between ind. effect of season (last measure)" = expression("Between ind. effect of season (last measure)"),
-                              "Between ind. effect of season (first measure)" = expression("Between ind. effect of season (first measure)"),
+  scale_y_discrete(labels = c(#"Between ind. effect of season (last measure)" = expression("Between ind. effect of season (last measure)"),
+                              #"Between ind. effect of season (first measure)" = expression("Between ind. effect of season (first measure)"),
+                              "Between ind. effect of season " = expression("Between ind. effect of season"),
                               "Within ind. temporal change" = expression("Within ind. temporal change"),
                               "Wing length" = expression("Wing length"),
                               "Total Marginal \U1D479\U00B2" = expression(paste("Total marginal ", italic("R"), ''^{2}, sep = "")))) +
@@ -494,12 +575,12 @@ mod_weight_wing_forest_plot_combo
 
 # export plot to disk
 ggsave(plot = mod_weight_wing_forest_plot_combo,
-       filename = "R/products/figures/jpg/mod_weight_wing_forest.jpg",
+       filename = "R/products/figures/jpg/mod_weight_wing_forest2.jpg",
        width = 6.5,
        height = 7, units = "in")
 
 ggsave(plot = mod_weight_wing_forest_plot_combo,
-       filename = "R/products/figures/svg/mod_weight_wing_forest.svg",
+       filename = "R/products/figures/svg/mod_weight_wing_forest2.svg",
        width = 6.5,
        height = 7, units = "in")
 
@@ -515,12 +596,6 @@ mod_weight_wing_fits <-
 
 wing_weight_plot <-
   ggplot() +
-  # geom_errorbarh(data = cap_05_09_std_pca,
-  #                aes(y = weight, x = wing, 
-  #                    xmin = weight - sd_egg_volume, 
-  #                    xmax = weight + sd_egg_volume), 
-  #                alpha = 0.3, size = 0.5, linetype = "solid",
-  #                color = brewer.pal(8, "Set1")[c(2)]) +
   geom_errorbar(data = cap_05_09_std_pca %>% 
                   group_by(capture_id, wing) %>% 
                   summarise(mean_weight = mean(weight),
@@ -640,27 +715,27 @@ plot(allEffects(mod_weight_wing))
 
 # extract fitted values of chick weight v egg volume model
 mod_weight_mes_dev_fits <- 
-  as.data.frame(effect(term = "measure_deviation", mod = stats_mod_weight_wing$mod, 
-                       xlevels = list(measure_deviation = seq(min(cap_05_09_std_pca[, "measure_deviation"], na.rm = TRUE),
-                                                              max(cap_05_09_std_pca[, "measure_deviation"], na.rm = TRUE), 0.01))))
+  as.data.frame(effect(term = "date_deviance", mod = stats_mod_weight_wing$mod, 
+                       xlevels = list(date_deviance = seq(min(cap_05_09_std_pca[, "date_deviance"], na.rm = TRUE),
+                                                              max(cap_05_09_std_pca[, "date_deviance"], na.rm = TRUE), 0.01))))
 
 mes_dev_weight_plot <-
   ggplot() +
   geom_point(data = cap_05_09_std_pca,
-             aes(x = measure_deviation, y = weight, group = capture_id),
+             aes(x = date_deviance, y = weight, group = capture_id),
              alpha = 0.4,
              shape = 19,
              color = brewer.pal(8, "Set1")[c(2)]) +
   geom_line(data = cap_05_09_std_pca,
-            aes(x = measure_deviation, y = weight, group = capture_id),
+            aes(x = date_deviance, y = weight, group = capture_id),
             lwd = 0.5,
             alpha = 0.4,
             color = brewer.pal(8, "Set1")[c(2)]) +
   geom_line(data = mod_weight_mes_dev_fits,
-            aes(x = measure_deviation, y = fit),
+            aes(x = date_deviance, y = fit),
             lwd = 1,
             color = brewer.pal(8, "Set1")[c(2)]) +
-  geom_ribbon(data = mod_weight_mes_dev_fits, aes(x = measure_deviation, 
+  geom_ribbon(data = mod_weight_mes_dev_fits, aes(x = date_deviance, 
                                                ymax = upper, ymin = lower),
               lwd = 1, alpha = 0.25) +
   luke_theme +
@@ -680,15 +755,15 @@ mes_dev_dist_plot <-
   ungroup() %>% 
   na.omit() %>% 
   ggplot() + 
-  geom_boxplot(aes(x = measure_deviation, y = 16), 
+  geom_boxplot(aes(x = date_deviance, y = 16), 
                fill = brewer.pal(8, "Set1")[c(2)], 
                color = brewer.pal(8, "Set1")[c(2)],
                width = 1, alpha = 0.5) +
-  geom_jitter(aes(x = measure_deviation, y = 13), 
+  geom_jitter(aes(x = date_deviance, y = 13), 
               fill = brewer.pal(8, "Set1")[c(2)], 
               color = brewer.pal(8, "Set1")[c(2)],
               height = 0.5, alpha = 0.5) +
-  geom_histogram(alpha = 0.5, aes(measure_deviation), 
+  geom_histogram(alpha = 0.5, aes(date_deviance), 
                  fill = brewer.pal(8, "Set1")[c(2)], 
                  binwidth = 1) +
   luke_theme +
@@ -761,9 +836,9 @@ plot(allEffects(mod_weight_wing))
 
 # extract fitted values of chick weight v egg volume model
 mod_weight_first_mes_fits <- 
-  as.data.frame(effect(term = "first_measure", mod = stats_mod_weight_wing$mod, 
-                       xlevels = list(first_measure = seq(min(cap_05_09_std_pca[, "first_measure"], na.rm = TRUE),
-                                                          max(cap_05_09_std_pca[, "first_measure"], na.rm = TRUE), 0.01))))
+  as.data.frame(effect(term = "first_date", mod = stats_mod_weight_wing$mod, 
+                       xlevels = list(first_date = seq(min(cap_05_09_std_pca[, "first_date"], na.rm = TRUE),
+                                                          max(cap_05_09_std_pca[, "first_date"], na.rm = TRUE), 0.01))))
 
 first_mes_weight_plot <-
   cap_05_09_std_pca %>% 
@@ -773,15 +848,15 @@ first_mes_weight_plot <-
   ungroup() %>% 
   na.omit() %>% 
   ggplot() +
-  geom_point(aes(x = first_measure, y = weight),
+  geom_point(aes(x = first_date, y = weight),
              alpha = 0.4,
              shape = 19,
              color = brewer.pal(8, "Set1")[c(2)]) +
   geom_line(data = mod_weight_first_mes_fits,
-            aes(x = first_measure, y = fit),
+            aes(x = first_date, y = fit),
             lwd = 1,
             color = brewer.pal(8, "Set1")[c(2)]) +
-  geom_ribbon(data = mod_weight_first_mes_fits, aes(x = first_measure, 
+  geom_ribbon(data = mod_weight_first_mes_fits, aes(x = first_date, 
                                                   ymax = upper, ymin = lower),
               lwd = 1, alpha = 0.25) +
   luke_theme +
@@ -801,15 +876,15 @@ first_mes_dist_plot <-
   ungroup() %>% 
   na.omit() %>% 
   ggplot() + 
-  geom_boxplot(aes(x = first_measure, y = 16), 
+  geom_boxplot(aes(x = first_date, y = 16), 
                fill = brewer.pal(8, "Set1")[c(2)], 
                color = brewer.pal(8, "Set1")[c(2)],
                width = 1, alpha = 0.5) +
-  geom_jitter(aes(x = first_measure, y = 13), 
+  geom_jitter(aes(x = first_date, y = 13), 
               fill = brewer.pal(8, "Set1")[c(2)], 
               color = brewer.pal(8, "Set1")[c(2)],
               height = 0.5, alpha = 0.5) +
-  geom_histogram(alpha = 0.5, aes(first_measure), 
+  geom_histogram(alpha = 0.5, aes(first_date), 
                  fill = brewer.pal(8, "Set1")[c(2)], 
                  binwidth = 1) +
   luke_theme +
@@ -880,9 +955,9 @@ plot(allEffects(mod_weight_wing))
 
 # extract fitted values of chick weight v egg volume model
 mod_weight_last_mes_fits <- 
-  as.data.frame(effect(term = "last_measure", mod = stats_mod_weight_wing$mod, 
-                       xlevels = list(last_measure = seq(min(cap_05_09_std_pca[, "last_measure"], na.rm = TRUE),
-                                                          max(cap_05_09_std_pca[, "last_measure"], na.rm = TRUE), 0.01))))
+  as.data.frame(effect(term = "last_date", mod = stats_mod_weight_wing$mod, 
+                       xlevels = list(last_date = seq(min(cap_05_09_std_pca[, "last_date"], na.rm = TRUE),
+                                                          max(cap_05_09_std_pca[, "last_date"], na.rm = TRUE), 0.01))))
 
 last_mes_weight_plot <-
   cap_05_09_std_pca %>% 
@@ -892,15 +967,15 @@ last_mes_weight_plot <-
   ungroup() %>% 
   na.omit() %>% 
   ggplot() +
-  geom_point(aes(x = last_measure, y = weight),
+  geom_point(aes(x = last_date, y = weight),
              alpha = 0.4,
              shape = 19,
              color = brewer.pal(8, "Set1")[c(2)]) +
   geom_line(data = mod_weight_last_mes_fits,
-            aes(x = last_measure, y = fit),
+            aes(x = last_date, y = fit),
             lwd = 1,
             color = brewer.pal(8, "Set1")[c(2)]) +
-  geom_ribbon(data = mod_weight_last_mes_fits, aes(x = last_measure, 
+  geom_ribbon(data = mod_weight_last_mes_fits, aes(x = last_date, 
                                                     ymax = upper, ymin = lower),
               lwd = 1, alpha = 0.25) +
   luke_theme +
@@ -920,15 +995,15 @@ last_mes_dist_plot <-
   ungroup() %>% 
   na.omit() %>% 
   ggplot() + 
-  geom_boxplot(aes(x = last_measure, y = 16), 
+  geom_boxplot(aes(x = last_date, y = 16), 
                fill = brewer.pal(8, "Set1")[c(2)], 
                color = brewer.pal(8, "Set1")[c(2)],
                width = 1, alpha = 0.5) +
-  geom_jitter(aes(x = last_measure, y = 13), 
+  geom_jitter(aes(x = last_date, y = 13), 
               fill = brewer.pal(8, "Set1")[c(2)], 
               color = brewer.pal(8, "Set1")[c(2)],
               height = 0.5, alpha = 0.5) +
-  geom_histogram(alpha = 0.5, aes(last_measure), 
+  geom_histogram(alpha = 0.5, aes(last_date), 
                  fill = brewer.pal(8, "Set1")[c(2)], 
                  binwidth = 1) +
   luke_theme +

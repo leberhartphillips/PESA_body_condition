@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8' ?>
-<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' width='468.00pt' height='648.00pt' viewBox='0 0 468.00 648.00'>
+<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' width='468.00pt' height='504.00pt' viewBox='0 0 468.00 504.00'>
 <defs>
   <style type='text/css'><![CDATA[
     .svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
@@ -16,203 +16,203 @@
 </defs>
 <rect width='100%' height='100%' style='stroke: none; fill: #FFFFFF;'/>
 <defs>
-  <clipPath id='cpMC4wMHw0NjguMDB8MC4wMHw2NDguMDA='>
-    <rect x='0.00' y='0.00' width='468.00' height='648.00' />
+  <clipPath id='cpMC4wMHw0NjguMDB8MC4wMHw1MDQuMDA='>
+    <rect x='0.00' y='0.00' width='468.00' height='504.00' />
   </clipPath>
 </defs>
-<g clip-path='url(#cpMC4wMHw0NjguMDB8MC4wMHw2NDguMDA=)'>
+<g clip-path='url(#cpMC4wMHw0NjguMDB8MC4wMHw1MDQuMDA=)'>
 </g>
 <defs>
-  <clipPath id='cpMC4wMHw0NjguMDB8NzguOTV8NTY5LjA1'>
-    <rect x='0.00' y='78.95' width='468.00' height='490.11' />
+  <clipPath id='cpMC4wMHw0NjguMDB8Ni45NXw0OTcuMDU='>
+    <rect x='0.00' y='6.95' width='468.00' height='490.11' />
   </clipPath>
 </defs>
-<g clip-path='url(#cpMC4wMHw0NjguMDB8NzguOTV8NTY5LjA1)'>
-<rect x='0.00' y='78.95' width='468.00' height='490.11' style='stroke-width: 1.07; stroke: #FFFFFF; fill: #FFFFFF;' />
+<g clip-path='url(#cpMC4wMHw0NjguMDB8Ni45NXw0OTcuMDU=)'>
+<rect x='0.00' y='6.95' width='468.00' height='490.11' style='stroke-width: 1.07; stroke: #FFFFFF; fill: #FFFFFF;' />
 </g>
-<g clip-path='url(#cpMC4wMHw0NjguMDB8MC4wMHw2NDguMDA=)'>
+<g clip-path='url(#cpMC4wMHw0NjguMDB8MC4wMHw1MDQuMDA=)'>
 </g>
 <defs>
-  <clipPath id='cpNS40OHw0NjIuNTJ8MTAyLjI4fDI3OS4xMQ=='>
-    <rect x='5.48' y='102.28' width='457.04' height='176.83' />
+  <clipPath id='cpNS40OHw0NjIuNTJ8MzAuMjh8MjA3LjEx'>
+    <rect x='5.48' y='30.28' width='457.04' height='176.83' />
   </clipPath>
 </defs>
-<g clip-path='url(#cpNS40OHw0NjIuNTJ8MTAyLjI4fDI3OS4xMQ==)'>
-<rect x='5.48' y='102.28' width='457.04' height='176.83' style='stroke-width: 1.07; stroke: #FFFFFF; fill: #FFFFFF;' />
+<g clip-path='url(#cpNS40OHw0NjIuNTJ8MzAuMjh8MjA3LjEx)'>
+<rect x='5.48' y='30.28' width='457.04' height='176.83' style='stroke-width: 1.07; stroke: #FFFFFF; fill: #FFFFFF;' />
 </g>
-<g clip-path='url(#cpMC4wMHw0NjguMDB8MC4wMHw2NDguMDA=)'>
+<g clip-path='url(#cpMC4wMHw0NjguMDB8MC4wMHw1MDQuMDA=)'>
 </g>
 <defs>
-  <clipPath id='cpMjM5LjIyfDQ1Ny4wNHwxMTkuMDF8MjQ2LjU3'>
-    <rect x='239.22' y='119.01' width='217.82' height='127.56' />
+  <clipPath id='cpMjM5LjIyfDQ1Ny4wNHw0Ny4wMXwxNzQuNTc='>
+    <rect x='239.22' y='47.01' width='217.82' height='127.56' />
   </clipPath>
 </defs>
-<g clip-path='url(#cpMjM5LjIyfDQ1Ny4wNHwxMTkuMDF8MjQ2LjU3)'>
-<rect x='239.22' y='119.01' width='217.82' height='127.56' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
-<line x1='335.26' y1='246.57' x2='335.26' y2='119.01' style='stroke-width: 1.07; stroke: #BEBEBE; stroke-dasharray: 5.69,5.69; stroke-linecap: butt;' />
-<polyline points='447.14,137.23 447.14,137.23 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<polyline points='447.14,137.23 387.90,137.23 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<polyline points='387.90,137.23 387.90,137.23 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<polyline points='321.67,167.60 321.67,167.60 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<polyline points='321.67,167.60 263.26,167.60 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<polyline points='263.26,167.60 263.26,167.60 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<polyline points='323.71,197.97 323.71,197.97 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<polyline points='323.71,197.97 249.12,197.97 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<polyline points='249.12,197.97 249.12,197.97 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<polyline points='369.62,228.34 369.62,228.34 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<polyline points='369.62,228.34 294.71,228.34 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<polyline points='294.71,228.34 294.71,228.34 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<circle cx='418.67' cy='137.23' r='3.56' style='stroke-width: 0.71; stroke: #2E3440; fill: #ECEFF4;' />
-<circle cx='291.28' cy='167.60' r='3.56' style='stroke-width: 0.71; stroke: #2E3440; fill: #ECEFF4;' />
-<circle cx='283.93' cy='197.97' r='3.56' style='stroke-width: 0.71; stroke: #2E3440; fill: #ECEFF4;' />
-<circle cx='331.07' cy='228.34' r='3.56' style='stroke-width: 0.71; stroke: #2E3440; fill: #ECEFF4;' />
-<rect x='239.22' y='119.01' width='217.82' height='127.56' style='stroke-width: 1.07; stroke: #BEBEBE;' />
+<g clip-path='url(#cpMjM5LjIyfDQ1Ny4wNHw0Ny4wMXwxNzQuNTc=)'>
+<rect x='239.22' y='47.01' width='217.82' height='127.56' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
+<line x1='335.26' y1='174.57' x2='335.26' y2='47.01' style='stroke-width: 1.07; stroke: #BEBEBE; stroke-dasharray: 5.69,5.69; stroke-linecap: butt;' />
+<polyline points='447.14,65.23 447.14,65.23 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<polyline points='447.14,65.23 387.90,65.23 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<polyline points='387.90,65.23 387.90,65.23 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<polyline points='321.67,95.60 321.67,95.60 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<polyline points='321.67,95.60 263.26,95.60 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<polyline points='263.26,95.60 263.26,95.60 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<polyline points='323.71,125.97 323.71,125.97 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<polyline points='323.71,125.97 249.12,125.97 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<polyline points='249.12,125.97 249.12,125.97 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<polyline points='369.62,156.34 369.62,156.34 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<polyline points='369.62,156.34 294.71,156.34 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<polyline points='294.71,156.34 294.71,156.34 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<circle cx='418.67' cy='65.23' r='3.56' style='stroke-width: 0.71; stroke: #2E3440; fill: #ECEFF4;' />
+<circle cx='291.28' cy='95.60' r='3.56' style='stroke-width: 0.71; stroke: #2E3440; fill: #ECEFF4;' />
+<circle cx='283.93' cy='125.97' r='3.56' style='stroke-width: 0.71; stroke: #2E3440; fill: #ECEFF4;' />
+<circle cx='331.07' cy='156.34' r='3.56' style='stroke-width: 0.71; stroke: #2E3440; fill: #ECEFF4;' />
+<rect x='239.22' y='47.01' width='217.82' height='127.56' style='stroke-width: 1.07; stroke: #BEBEBE;' />
 </g>
-<g clip-path='url(#cpMC4wMHw0NjguMDB8MC4wMHw2NDguMDA=)'>
-<text x='234.29' y='231.68' text-anchor='end' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='188.31px' lengthAdjust='spacingAndGlyphs'>Between ind. effect of season (last measure)</text>
-<text x='234.29' y='201.31' text-anchor='end' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='189.42px' lengthAdjust='spacingAndGlyphs'>Between ind. effect of season (first measure)</text>
-<text x='234.29' y='170.94' text-anchor='end' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='118.24px' lengthAdjust='spacingAndGlyphs'>Within ind. temporal change</text>
-<text x='234.29' y='140.56' text-anchor='end' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='49.61px' lengthAdjust='spacingAndGlyphs'>Wing length</text>
-<polyline points='236.48,228.34 239.22,228.34 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
-<polyline points='236.48,197.97 239.22,197.97 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
-<polyline points='236.48,167.60 239.22,167.60 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
-<polyline points='236.48,137.23 239.22,137.23 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
-<polyline points='283.80,249.31 283.80,246.57 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
-<polyline points='335.26,249.31 335.26,246.57 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
-<polyline points='386.73,249.31 386.73,246.57 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
-<polyline points='438.20,249.31 438.20,246.57 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
-<text x='283.80' y='258.17' text-anchor='middle' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='22.60px' lengthAdjust='spacingAndGlyphs'>-0.25</text>
-<text x='335.26' y='258.17' text-anchor='middle' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='20.10px' lengthAdjust='spacingAndGlyphs'>0.00</text>
-<text x='386.73' y='258.17' text-anchor='middle' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='20.10px' lengthAdjust='spacingAndGlyphs'>0.25</text>
-<text x='438.20' y='258.17' text-anchor='middle' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='20.10px' lengthAdjust='spacingAndGlyphs'>0.50</text>
-<text x='251.69' y='269.65' style='font-size: 10.00px; font-style: italic; font-family: "Franklin Gothic Book";' textLength='142.14px' lengthAdjust='spacingAndGlyphs'>              Standardized effect size (</text>
-<text x='394.83' y='269.65' style='font-size: 10.00px; font-family: "Symbol";' textLength='5.49px' lengthAdjust='spacingAndGlyphs'>β</text>
-<text x='400.31' y='269.65' style='font-size: 10.00px; font-style: italic; font-family: "Franklin Gothic Book";' textLength='2.94px' lengthAdjust='spacingAndGlyphs'>)</text>
-<text x='406.06' y='269.65' style='font-size: 10.00px; font-family: "Symbol";' textLength='5.49px' lengthAdjust='spacingAndGlyphs'>±</text>
-<text x='413.36' y='269.65' style='font-size: 10.00px; font-style: italic; font-family: "Franklin Gothic Book";' textLength='30.21px' lengthAdjust='spacingAndGlyphs'>95% CI</text>
-<text transform='translate(33.41,182.79) rotate(-90)' text-anchor='middle' style='font-size: 12.00px; font-family: "Franklin Gothic Book";' textLength='64.03px' lengthAdjust='spacingAndGlyphs'>Fixed effects</text>
-<text x='14.94' y='117.78' text-anchor='middle' style='font-size: 13.20px; font-family: "Franklin Gothic Book";' textLength='7.06px' lengthAdjust='spacingAndGlyphs'>A</text>
+<g clip-path='url(#cpMC4wMHw0NjguMDB8MC4wMHw1MDQuMDA=)'>
+<text x='234.29' y='159.68' text-anchor='end' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='188.31px' lengthAdjust='spacingAndGlyphs'>Between ind. effect of season (last measure)</text>
+<text x='234.29' y='129.31' text-anchor='end' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='189.42px' lengthAdjust='spacingAndGlyphs'>Between ind. effect of season (first measure)</text>
+<text x='234.29' y='98.94' text-anchor='end' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='118.24px' lengthAdjust='spacingAndGlyphs'>Within ind. temporal change</text>
+<text x='234.29' y='68.56' text-anchor='end' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='49.61px' lengthAdjust='spacingAndGlyphs'>Wing length</text>
+<polyline points='236.48,156.34 239.22,156.34 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
+<polyline points='236.48,125.97 239.22,125.97 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
+<polyline points='236.48,95.60 239.22,95.60 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
+<polyline points='236.48,65.23 239.22,65.23 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
+<polyline points='283.80,177.31 283.80,174.57 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
+<polyline points='335.26,177.31 335.26,174.57 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
+<polyline points='386.73,177.31 386.73,174.57 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
+<polyline points='438.20,177.31 438.20,174.57 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
+<text x='283.80' y='186.17' text-anchor='middle' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='22.60px' lengthAdjust='spacingAndGlyphs'>-0.25</text>
+<text x='335.26' y='186.17' text-anchor='middle' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='20.10px' lengthAdjust='spacingAndGlyphs'>0.00</text>
+<text x='386.73' y='186.17' text-anchor='middle' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='20.10px' lengthAdjust='spacingAndGlyphs'>0.25</text>
+<text x='438.20' y='186.17' text-anchor='middle' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='20.10px' lengthAdjust='spacingAndGlyphs'>0.50</text>
+<text x='251.69' y='197.65' style='font-size: 10.00px; font-style: italic; font-family: "Franklin Gothic Book";' textLength='142.14px' lengthAdjust='spacingAndGlyphs'>              Standardized effect size (</text>
+<text x='394.83' y='197.65' style='font-size: 10.00px; font-family: "Symbol";' textLength='5.49px' lengthAdjust='spacingAndGlyphs'>β</text>
+<text x='400.31' y='197.65' style='font-size: 10.00px; font-style: italic; font-family: "Franklin Gothic Book";' textLength='2.94px' lengthAdjust='spacingAndGlyphs'>)</text>
+<text x='406.06' y='197.65' style='font-size: 10.00px; font-family: "Symbol";' textLength='5.49px' lengthAdjust='spacingAndGlyphs'>±</text>
+<text x='413.36' y='197.65' style='font-size: 10.00px; font-style: italic; font-family: "Franklin Gothic Book";' textLength='30.21px' lengthAdjust='spacingAndGlyphs'>95% CI</text>
+<text transform='translate(33.41,110.79) rotate(-90)' text-anchor='middle' style='font-size: 12.00px; font-family: "Franklin Gothic Book";' textLength='64.03px' lengthAdjust='spacingAndGlyphs'>Fixed effects</text>
+<text x='14.94' y='45.78' text-anchor='middle' style='font-size: 13.20px; font-family: "Franklin Gothic Book";' textLength='7.06px' lengthAdjust='spacingAndGlyphs'>A</text>
 </g>
 <defs>
-  <clipPath id='cpNS40OHw0NjIuNTJ8Mjc5LjExfDQ0My44Nw=='>
-    <rect x='5.48' y='279.11' width='457.04' height='164.77' />
+  <clipPath id='cpNS40OHw0NjIuNTJ8MjA3LjExfDM3MS44Nw=='>
+    <rect x='5.48' y='207.11' width='457.04' height='164.77' />
   </clipPath>
 </defs>
-<g clip-path='url(#cpNS40OHw0NjIuNTJ8Mjc5LjExfDQ0My44Nw==)'>
-<rect x='5.48' y='279.11' width='457.04' height='164.77' style='stroke-width: 1.07; stroke: #FFFFFF; fill: #FFFFFF;' />
+<g clip-path='url(#cpNS40OHw0NjIuNTJ8MjA3LjExfDM3MS44Nw==)'>
+<rect x='5.48' y='207.11' width='457.04' height='164.77' style='stroke-width: 1.07; stroke: #FFFFFF; fill: #FFFFFF;' />
 </g>
-<g clip-path='url(#cpMC4wMHw0NjguMDB8MC4wMHw2NDguMDA=)'>
+<g clip-path='url(#cpMC4wMHw0NjguMDB8MC4wMHw1MDQuMDA=)'>
 </g>
 <defs>
-  <clipPath id='cpMjM5LjIyfDQ1Ny4wNHwyOTUuODN8NDA5LjIy'>
-    <rect x='239.22' y='295.83' width='217.82' height='113.39' />
+  <clipPath id='cpMjM5LjIyfDQ1Ny4wNHwyMjMuODN8MzM3LjIy'>
+    <rect x='239.22' y='223.83' width='217.82' height='113.39' />
   </clipPath>
 </defs>
-<g clip-path='url(#cpMjM5LjIyfDQ1Ny4wNHwyOTUuODN8NDA5LjIy)'>
-<rect x='239.22' y='295.83' width='217.82' height='113.39' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
-<line x1='249.12' y1='409.22' x2='249.12' y2='295.83' style='stroke-width: 1.07; stroke: #BEBEBE; stroke-dasharray: 5.69,5.69; stroke-linecap: butt;' />
-<polyline points='447.14,308.92 447.14,308.92 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<polyline points='447.14,308.92 321.28,308.92 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<polyline points='321.28,308.92 321.28,308.92 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<polyline points='405.77,330.72 405.77,330.72 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<polyline points='405.77,330.72 268.88,330.72 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<polyline points='268.88,330.72 268.88,330.72 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<polyline points='352.69,352.53 352.69,352.53 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<polyline points='352.69,352.53 249.12,352.53 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<polyline points='249.12,352.53 249.12,352.53 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<polyline points='352.89,374.33 352.89,374.33 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<polyline points='352.89,374.33 249.12,374.33 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<polyline points='249.12,374.33 249.12,374.33 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<polyline points='338.99,396.14 338.99,396.14 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<polyline points='338.99,396.14 249.12,396.14 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<polyline points='249.12,396.14 249.12,396.14 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<circle cx='373.49' cy='308.92' r='3.56' style='stroke-width: 0.71; stroke: #2E3440; fill: #ECEFF4;' />
-<circle cx='327.20' cy='330.72' r='3.56' style='stroke-width: 0.71; stroke: #2E3440; fill: #ECEFF4;' />
-<circle cx='265.22' cy='352.53' r='3.56' style='stroke-width: 0.71; stroke: #2E3440; fill: #ECEFF4;' />
-<circle cx='265.45' cy='374.33' r='3.56' style='stroke-width: 0.71; stroke: #2E3440; fill: #ECEFF4;' />
-<circle cx='249.65' cy='396.14' r='3.56' style='stroke-width: 0.71; stroke: #2E3440; fill: #ECEFF4;' />
-<rect x='239.22' y='295.83' width='217.82' height='113.39' style='stroke-width: 1.07; stroke: #BEBEBE;' />
+<g clip-path='url(#cpMjM5LjIyfDQ1Ny4wNHwyMjMuODN8MzM3LjIy)'>
+<rect x='239.22' y='223.83' width='217.82' height='113.39' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
+<line x1='249.12' y1='337.22' x2='249.12' y2='223.83' style='stroke-width: 1.07; stroke: #BEBEBE; stroke-dasharray: 5.69,5.69; stroke-linecap: butt;' />
+<polyline points='447.14,236.92 447.14,236.92 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<polyline points='447.14,236.92 321.28,236.92 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<polyline points='321.28,236.92 321.28,236.92 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<polyline points='405.77,258.72 405.77,258.72 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<polyline points='405.77,258.72 268.88,258.72 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<polyline points='268.88,258.72 268.88,258.72 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<polyline points='352.69,280.53 352.69,280.53 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<polyline points='352.69,280.53 249.12,280.53 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<polyline points='249.12,280.53 249.12,280.53 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<polyline points='352.89,302.33 352.89,302.33 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<polyline points='352.89,302.33 249.12,302.33 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<polyline points='249.12,302.33 249.12,302.33 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<polyline points='338.99,324.14 338.99,324.14 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<polyline points='338.99,324.14 249.12,324.14 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<polyline points='249.12,324.14 249.12,324.14 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<circle cx='373.49' cy='236.92' r='3.56' style='stroke-width: 0.71; stroke: #2E3440; fill: #ECEFF4;' />
+<circle cx='327.20' cy='258.72' r='3.56' style='stroke-width: 0.71; stroke: #2E3440; fill: #ECEFF4;' />
+<circle cx='265.22' cy='280.53' r='3.56' style='stroke-width: 0.71; stroke: #2E3440; fill: #ECEFF4;' />
+<circle cx='265.45' cy='302.33' r='3.56' style='stroke-width: 0.71; stroke: #2E3440; fill: #ECEFF4;' />
+<circle cx='249.65' cy='324.14' r='3.56' style='stroke-width: 0.71; stroke: #2E3440; fill: #ECEFF4;' />
+<rect x='239.22' y='223.83' width='217.82' height='113.39' style='stroke-width: 1.07; stroke: #BEBEBE;' />
 </g>
-<g clip-path='url(#cpMC4wMHw0NjguMDB8MC4wMHw2NDguMDA=)'>
-<text x='45.98' y='398.71' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='188.31px' lengthAdjust='spacingAndGlyphs'>Between ind. effect of season (last measure)</text>
-<text x='44.87' y='376.90' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='189.42px' lengthAdjust='spacingAndGlyphs'>Between ind. effect of season (first measure)</text>
-<text x='116.05' y='354.93' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='118.24px' lengthAdjust='spacingAndGlyphs'>Within ind. temporal change</text>
-<text x='184.68' y='333.13' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='49.61px' lengthAdjust='spacingAndGlyphs'>Wing length</text>
-<text x='160.91' y='312.71' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='61.94px' lengthAdjust='spacingAndGlyphs'>Total marginal </text>
-<text x='222.85' y='312.71' style='font-size: 10.00px; font-style: italic;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='6.34px' lengthAdjust='spacingAndGlyphs'>R</text>
-<text x='230.19' y='308.02' style='font-size: 7.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='4.10px' lengthAdjust='spacingAndGlyphs'>2</text>
-<polyline points='236.48,396.14 239.22,396.14 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
-<polyline points='236.48,374.33 239.22,374.33 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
-<polyline points='236.48,352.53 239.22,352.53 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
-<polyline points='236.48,330.72 239.22,330.72 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
-<polyline points='236.48,308.92 239.22,308.92 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
-<polyline points='249.12,411.96 249.12,409.22 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
-<polyline points='299.72,411.96 299.72,409.22 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
-<polyline points='350.31,411.96 350.31,409.22 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
-<polyline points='400.90,411.96 400.90,409.22 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
-<polyline points='451.50,411.96 451.50,409.22 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
-<text x='249.12' y='420.82' text-anchor='middle' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='14.23px' lengthAdjust='spacingAndGlyphs'>0.0</text>
-<text x='299.72' y='420.82' text-anchor='middle' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='13.85px' lengthAdjust='spacingAndGlyphs'>0.1</text>
-<text x='350.31' y='420.82' text-anchor='middle' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='14.23px' lengthAdjust='spacingAndGlyphs'>0.2</text>
-<text x='400.90' y='420.82' text-anchor='middle' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='14.23px' lengthAdjust='spacingAndGlyphs'>0.3</text>
-<text x='451.50' y='420.82' text-anchor='middle' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='14.23px' lengthAdjust='spacingAndGlyphs'>0.4</text>
-<text x='258.77' y='434.87' style='font-size: 10.00px; font-style: italic; font-family: "Franklin Gothic Book";' textLength='129.37px' lengthAdjust='spacingAndGlyphs'>               Variance explained (R</text>
-<text x='389.13' y='430.17' style='font-size: 7.00px; font-family: "Franklin Gothic Book";' textLength='4.10px' lengthAdjust='spacingAndGlyphs'>2</text>
-<text x='393.24' y='434.87' style='font-size: 10.00px; font-style: italic; font-family: "Franklin Gothic Book";' textLength='2.94px' lengthAdjust='spacingAndGlyphs'>)</text>
-<text x='398.99' y='434.87' style='font-size: 10.00px; font-family: "Symbol";' textLength='5.49px' lengthAdjust='spacingAndGlyphs'>±</text>
-<text x='406.29' y='434.87' style='font-size: 10.00px; font-style: italic; font-family: "Franklin Gothic Book";' textLength='30.21px' lengthAdjust='spacingAndGlyphs'>95% CI</text>
-<text transform='translate(34.07,391.53) rotate(-90)' style='font-size: 12.00px; font-family: "Franklin Gothic Book";' textLength='64.28px' lengthAdjust='spacingAndGlyphs'>Semi-partial </text>
-<text transform='translate(34.07,327.25) rotate(-90)' style='font-size: 12.00px; font-style: italic; font-family: "Franklin Gothic Book";' textLength='7.60px' lengthAdjust='spacingAndGlyphs'>R</text>
-<text transform='translate(28.45,318.44) rotate(-90)' style='font-size: 8.40px; font-family: "Franklin Gothic Book";' textLength='4.92px' lengthAdjust='spacingAndGlyphs'>2</text>
-<text x='14.94' y='294.61' text-anchor='middle' style='font-size: 13.20px; font-family: "Franklin Gothic Book";' textLength='7.97px' lengthAdjust='spacingAndGlyphs'>B</text>
+<g clip-path='url(#cpMC4wMHw0NjguMDB8MC4wMHw1MDQuMDA=)'>
+<text x='45.98' y='326.71' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='188.31px' lengthAdjust='spacingAndGlyphs'>Between ind. effect of season (last measure)</text>
+<text x='44.87' y='304.90' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='189.42px' lengthAdjust='spacingAndGlyphs'>Between ind. effect of season (first measure)</text>
+<text x='116.05' y='282.93' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='118.24px' lengthAdjust='spacingAndGlyphs'>Within ind. temporal change</text>
+<text x='184.68' y='261.13' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='49.61px' lengthAdjust='spacingAndGlyphs'>Wing length</text>
+<text x='160.91' y='240.71' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='61.94px' lengthAdjust='spacingAndGlyphs'>Total marginal </text>
+<text x='222.85' y='240.71' style='font-size: 10.00px; font-style: italic;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='6.34px' lengthAdjust='spacingAndGlyphs'>R</text>
+<text x='230.19' y='236.02' style='font-size: 7.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='4.10px' lengthAdjust='spacingAndGlyphs'>2</text>
+<polyline points='236.48,324.14 239.22,324.14 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
+<polyline points='236.48,302.33 239.22,302.33 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
+<polyline points='236.48,280.53 239.22,280.53 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
+<polyline points='236.48,258.72 239.22,258.72 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
+<polyline points='236.48,236.92 239.22,236.92 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
+<polyline points='249.12,339.96 249.12,337.22 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
+<polyline points='299.72,339.96 299.72,337.22 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
+<polyline points='350.31,339.96 350.31,337.22 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
+<polyline points='400.90,339.96 400.90,337.22 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
+<polyline points='451.50,339.96 451.50,337.22 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
+<text x='249.12' y='348.82' text-anchor='middle' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='14.23px' lengthAdjust='spacingAndGlyphs'>0.0</text>
+<text x='299.72' y='348.82' text-anchor='middle' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='13.85px' lengthAdjust='spacingAndGlyphs'>0.1</text>
+<text x='350.31' y='348.82' text-anchor='middle' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='14.23px' lengthAdjust='spacingAndGlyphs'>0.2</text>
+<text x='400.90' y='348.82' text-anchor='middle' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='14.23px' lengthAdjust='spacingAndGlyphs'>0.3</text>
+<text x='451.50' y='348.82' text-anchor='middle' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='14.23px' lengthAdjust='spacingAndGlyphs'>0.4</text>
+<text x='258.77' y='362.87' style='font-size: 10.00px; font-style: italic; font-family: "Franklin Gothic Book";' textLength='129.37px' lengthAdjust='spacingAndGlyphs'>               Variance explained (R</text>
+<text x='389.13' y='358.17' style='font-size: 7.00px; font-family: "Franklin Gothic Book";' textLength='4.10px' lengthAdjust='spacingAndGlyphs'>2</text>
+<text x='393.24' y='362.87' style='font-size: 10.00px; font-style: italic; font-family: "Franklin Gothic Book";' textLength='2.94px' lengthAdjust='spacingAndGlyphs'>)</text>
+<text x='398.99' y='362.87' style='font-size: 10.00px; font-family: "Symbol";' textLength='5.49px' lengthAdjust='spacingAndGlyphs'>±</text>
+<text x='406.29' y='362.87' style='font-size: 10.00px; font-style: italic; font-family: "Franklin Gothic Book";' textLength='30.21px' lengthAdjust='spacingAndGlyphs'>95% CI</text>
+<text transform='translate(34.07,319.53) rotate(-90)' style='font-size: 12.00px; font-family: "Franklin Gothic Book";' textLength='64.28px' lengthAdjust='spacingAndGlyphs'>Semi-partial </text>
+<text transform='translate(34.07,255.25) rotate(-90)' style='font-size: 12.00px; font-style: italic; font-family: "Franklin Gothic Book";' textLength='7.60px' lengthAdjust='spacingAndGlyphs'>R</text>
+<text transform='translate(28.45,246.44) rotate(-90)' style='font-size: 8.40px; font-family: "Franklin Gothic Book";' textLength='4.92px' lengthAdjust='spacingAndGlyphs'>2</text>
+<text x='14.94' y='222.61' text-anchor='middle' style='font-size: 13.20px; font-family: "Franklin Gothic Book";' textLength='7.97px' lengthAdjust='spacingAndGlyphs'>B</text>
 </g>
 <defs>
-  <clipPath id='cpNS40OHw0NjIuNTJ8NDQzLjg3fDU2My41Nw=='>
-    <rect x='5.48' y='443.87' width='457.04' height='119.70' />
+  <clipPath id='cpNS40OHw0NjIuNTJ8MzcxLjg3fDQ5MS41Nw=='>
+    <rect x='5.48' y='371.87' width='457.04' height='119.70' />
   </clipPath>
 </defs>
-<g clip-path='url(#cpNS40OHw0NjIuNTJ8NDQzLjg3fDU2My41Nw==)'>
-<rect x='5.48' y='443.87' width='457.04' height='119.70' style='stroke-width: 1.07; stroke: #FFFFFF; fill: #FFFFFF;' />
+<g clip-path='url(#cpNS40OHw0NjIuNTJ8MzcxLjg3fDQ5MS41Nw==)'>
+<rect x='5.48' y='371.87' width='457.04' height='119.70' style='stroke-width: 1.07; stroke: #FFFFFF; fill: #FFFFFF;' />
 </g>
-<g clip-path='url(#cpMC4wMHw0NjguMDB8MC4wMHw2NDguMDA=)'>
+<g clip-path='url(#cpMC4wMHw0NjguMDB8MC4wMHw1MDQuMDA=)'>
 </g>
 <defs>
-  <clipPath id='cpMjM5LjIyfDQ1Ny4wNHw0NjAuNjB8NTMxLjQ3'>
-    <rect x='239.22' y='460.60' width='217.82' height='70.87' />
+  <clipPath id='cpMjM5LjIyfDQ1Ny4wNHwzODguNjB8NDU5LjQ3'>
+    <rect x='239.22' y='388.60' width='217.82' height='70.87' />
   </clipPath>
 </defs>
-<g clip-path='url(#cpMjM5LjIyfDQ1Ny4wNHw0NjAuNjB8NTMxLjQ3)'>
-<rect x='239.22' y='460.60' width='217.82' height='70.87' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
-<line x1='249.12' y1='531.47' x2='249.12' y2='460.60' style='stroke-width: 1.07; stroke: #BEBEBE; stroke-dasharray: 5.69,5.69; stroke-linecap: butt;' />
-<polyline points='364.31,479.93 364.31,479.93 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<polyline points='364.31,479.93 276.45,479.93 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<polyline points='276.45,479.93 276.45,479.93 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<polyline points='447.14,512.14 447.14,512.14 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<polyline points='447.14,512.14 359.29,512.14 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<polyline points='359.29,512.14 359.29,512.14 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
-<circle cx='323.81' cy='479.93' r='3.56' style='stroke-width: 0.71; stroke: #2E3440; fill: #ECEFF4;' />
-<circle cx='399.78' cy='512.14' r='3.56' style='stroke-width: 0.71; stroke: #2E3440; fill: #ECEFF4;' />
-<rect x='239.22' y='460.60' width='217.82' height='70.87' style='stroke-width: 1.07; stroke: #BEBEBE;' />
+<g clip-path='url(#cpMjM5LjIyfDQ1Ny4wNHwzODguNjB8NDU5LjQ3)'>
+<rect x='239.22' y='388.60' width='217.82' height='70.87' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
+<line x1='249.12' y1='459.47' x2='249.12' y2='388.60' style='stroke-width: 1.07; stroke: #BEBEBE; stroke-dasharray: 5.69,5.69; stroke-linecap: butt;' />
+<polyline points='364.31,407.93 364.31,407.93 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<polyline points='364.31,407.93 276.45,407.93 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<polyline points='276.45,407.93 276.45,407.93 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<polyline points='447.14,440.14 447.14,440.14 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<polyline points='447.14,440.14 359.29,440.14 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<polyline points='359.29,440.14 359.29,440.14 ' style='stroke-width: 1.07; stroke: #2E3440; stroke-linecap: butt;' />
+<circle cx='323.81' cy='407.93' r='3.56' style='stroke-width: 0.71; stroke: #2E3440; fill: #ECEFF4;' />
+<circle cx='399.78' cy='440.14' r='3.56' style='stroke-width: 0.71; stroke: #2E3440; fill: #ECEFF4;' />
+<rect x='239.22' y='388.60' width='217.82' height='70.87' style='stroke-width: 1.07; stroke: #BEBEBE;' />
 </g>
-<g clip-path='url(#cpMC4wMHw0NjguMDB8MC4wMHw2NDguMDA=)'>
-<text x='234.29' y='515.47' text-anchor='end' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='36.48px' lengthAdjust='spacingAndGlyphs'>Residual</text>
-<text x='234.29' y='483.26' text-anchor='end' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='40.79px' lengthAdjust='spacingAndGlyphs'>Individual</text>
-<polyline points='236.48,512.14 239.22,512.14 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
-<polyline points='236.48,479.93 239.22,479.93 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
-<polyline points='249.12,534.21 249.12,531.47 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
-<polyline points='305.46,534.21 305.46,531.47 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
-<polyline points='361.80,534.21 361.80,531.47 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
-<polyline points='418.13,534.21 418.13,531.47 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
-<text x='249.12' y='543.06' text-anchor='middle' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='20.10px' lengthAdjust='spacingAndGlyphs'>0.00</text>
-<text x='305.46' y='543.06' text-anchor='middle' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='20.10px' lengthAdjust='spacingAndGlyphs'>0.25</text>
-<text x='361.80' y='543.06' text-anchor='middle' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='20.10px' lengthAdjust='spacingAndGlyphs'>0.50</text>
-<text x='418.13' y='543.06' text-anchor='middle' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='20.10px' lengthAdjust='spacingAndGlyphs'>0.75</text>
-<text x='258.34' y='554.49' style='font-size: 10.00px; font-style: italic; font-family: "Franklin Gothic Book";' textLength='138.25px' lengthAdjust='spacingAndGlyphs'>              Adjusted repeatability (r)</text>
-<text x='399.41' y='554.49' style='font-size: 10.00px; font-family: "Symbol";' textLength='5.49px' lengthAdjust='spacingAndGlyphs'>±</text>
-<text x='406.71' y='554.49' style='font-size: 10.00px; font-style: italic; font-family: "Franklin Gothic Book";' textLength='30.21px' lengthAdjust='spacingAndGlyphs'>95% CI</text>
-<text transform='translate(26.93,496.03) rotate(-90)' text-anchor='middle' style='font-size: 12.00px; font-family: "Franklin Gothic Book";' textLength='52.34px' lengthAdjust='spacingAndGlyphs'>Intra-class</text>
-<text transform='translate(39.89,496.03) rotate(-90)' text-anchor='middle' style='font-size: 12.00px; font-family: "Franklin Gothic Book";' textLength='54.29px' lengthAdjust='spacingAndGlyphs'>correlation</text>
-<text x='14.94' y='459.37' text-anchor='middle' style='font-size: 13.20px; font-family: "Franklin Gothic Book";' textLength='7.64px' lengthAdjust='spacingAndGlyphs'>C</text>
-<text x='430.27' y='93.89' text-anchor='end' style='font-size: 13.20px; font-style: italic; font-family: "Arial";' textLength='267.62px' lengthAdjust='spacingAndGlyphs'>male pectoral sandpiper body mass dynamics</text>
+<g clip-path='url(#cpMC4wMHw0NjguMDB8MC4wMHw1MDQuMDA=)'>
+<text x='234.29' y='443.47' text-anchor='end' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='36.48px' lengthAdjust='spacingAndGlyphs'>Residual</text>
+<text x='234.29' y='411.26' text-anchor='end' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='40.79px' lengthAdjust='spacingAndGlyphs'>Individual</text>
+<polyline points='236.48,440.14 239.22,440.14 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
+<polyline points='236.48,407.93 239.22,407.93 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
+<polyline points='249.12,462.21 249.12,459.47 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
+<polyline points='305.46,462.21 305.46,459.47 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
+<polyline points='361.80,462.21 361.80,459.47 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
+<polyline points='418.13,462.21 418.13,459.47 ' style='stroke-width: 1.07; stroke: #666666; stroke-linecap: butt;' />
+<text x='249.12' y='471.06' text-anchor='middle' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='20.10px' lengthAdjust='spacingAndGlyphs'>0.00</text>
+<text x='305.46' y='471.06' text-anchor='middle' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='20.10px' lengthAdjust='spacingAndGlyphs'>0.25</text>
+<text x='361.80' y='471.06' text-anchor='middle' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='20.10px' lengthAdjust='spacingAndGlyphs'>0.50</text>
+<text x='418.13' y='471.06' text-anchor='middle' style='font-size: 10.00px;fill: #4D4D4D; font-family: "Franklin Gothic Book";' textLength='20.10px' lengthAdjust='spacingAndGlyphs'>0.75</text>
+<text x='258.34' y='482.49' style='font-size: 10.00px; font-style: italic; font-family: "Franklin Gothic Book";' textLength='138.25px' lengthAdjust='spacingAndGlyphs'>              Adjusted repeatability (r)</text>
+<text x='399.41' y='482.49' style='font-size: 10.00px; font-family: "Symbol";' textLength='5.49px' lengthAdjust='spacingAndGlyphs'>±</text>
+<text x='406.71' y='482.49' style='font-size: 10.00px; font-style: italic; font-family: "Franklin Gothic Book";' textLength='30.21px' lengthAdjust='spacingAndGlyphs'>95% CI</text>
+<text transform='translate(26.93,424.03) rotate(-90)' text-anchor='middle' style='font-size: 12.00px; font-family: "Franklin Gothic Book";' textLength='52.34px' lengthAdjust='spacingAndGlyphs'>Intra-class</text>
+<text transform='translate(39.89,424.03) rotate(-90)' text-anchor='middle' style='font-size: 12.00px; font-family: "Franklin Gothic Book";' textLength='54.29px' lengthAdjust='spacingAndGlyphs'>correlation</text>
+<text x='14.94' y='387.37' text-anchor='middle' style='font-size: 13.20px; font-family: "Franklin Gothic Book";' textLength='7.64px' lengthAdjust='spacingAndGlyphs'>C</text>
+<text x='430.27' y='21.89' text-anchor='end' style='font-size: 13.20px; font-style: italic; font-family: "Arial";' textLength='267.62px' lengthAdjust='spacingAndGlyphs'>male pectoral sandpiper body mass dynamics</text>
 </g>
 </svg>
