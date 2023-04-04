@@ -12,14 +12,7 @@ execute:
 ---
 
 ```{r, settings_data}
-
-sapply( c('ggplot2', "glmmTMB", "gtsummary", "ggeffects", "patchwork"),
-require, character.only = TRUE, quietly = TRUE)
-
-
-source( here::here("R/DAT/PESA_breeding_study_2005_2009.R"))
-
-
+source("R/DAT/wrangle_datasets.R")
 ```
 
 

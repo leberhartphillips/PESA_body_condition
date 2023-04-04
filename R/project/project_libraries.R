@@ -19,7 +19,8 @@ packages_required_in_project <-
     "effects",
     "gt",
     "RColorBrewer",
-    "patchwork"
+    "patchwork",
+    "multcomp"
   )
 
 # of the required packages, check if some need to be installed

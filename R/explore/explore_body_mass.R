@@ -1,4 +1,5 @@
 source("R/DAT/wrangle_datasets.R")
+source("R/project/project_plotting.R")
 cap_all_phenology <-
   cap_all %>% 
   mutate(capture_id = paste(ID, year_, sep = "_")) %>% 
@@ -16,7 +17,7 @@ cap_all_phenology <-
 
 # assess the distribution of repeated measures
 cap_05_09 %>% 
-  select(year_, ID, n_by_id) %>% 
+  dplyr::select(year_, ID, n_by_id) %>% 
   distinct() %>% 
   count(n_by_id)
 
@@ -61,7 +62,8 @@ cap_05_09_std <-
   mutate(measure_deviation = gpsdt_std - gpsdt_std[which.min(gpsdt_std)],
          first_measure = gpsdt_std[which.min(gpsdt_std)],
          last_measure = gpsdt_std[which.max(gpsdt_std)]) %>% 
-  select(year_, capture_id, gpsdt, measure_deviation, first_measure, last_measure, weight, culmen, totalHead, tarsus,  wing, n_by_id)
+  dplyr::select(year_, capture_id, gpsdt, measure_deviation, first_measure, 
+                last_measure, weight, culmen, totalHead, tarsus,  wing, n_by_id)
 
 # PCA of static body structural measurements (culmen, totalHead, tarsus, wing)
 static_measures_pca <-
@@ -71,7 +73,7 @@ static_measures_pca <-
   slice(1) %>% 
   ungroup() %>% 
   na.omit() %>%
-  select(culmen, totalHead, tarsus,  wing) %>%
+  dplyr::select(culmen, totalHead, tarsus,  wing) %>%
   princomp()
 
 # check the PCA results
@@ -86,10 +88,12 @@ cap_05_09_std_pca <-
   slice(1) %>% 
   ungroup() %>% 
   na.omit() %>% 
-  select(capture_id, culmen, totalHead, tarsus,  wing) %>%
+  dplyr::select(capture_id, culmen, totalHead, tarsus,  wing) %>%
   bind_cols(., static_measures_pca$scores[, 1]) %>% 
   rename(structure_pc1 = `...6`) %>% 
-  left_join(cap_05_09_std %>% select(-c(culmen, totalHead, tarsus,  wing)), ., by = "capture_id", multiple = "all") %>% 
+  left_join(cap_05_09_std %>% 
+              dplyr::select(-c(culmen, totalHead, tarsus,  wing)), ., 
+            by = "capture_id", multiple = "all") %>% 
   na.omit()
 
 ggplot(cap_05_09_std_pca, 
@@ -106,9 +110,11 @@ ggplot(cap_05_09_std_pca,
 
 # check 
 cap_05_09_std_pca %>% 
+  arrange(capture_id, gpsdt) %>% 
+  slice(1) %>% 
   ungroup() %>% 
   na.omit() %>% 
-  select(weight, culmen, totalHead, tarsus,  wing, structure_pc1) %>% 
+  dplyr::select(weight, culmen, totalHead, tarsus,  wing, structure_pc1) %>% 
   cor() %>% 
   corrplot(type = "upper", method = "number", tl.srt = 45)
 
@@ -490,3 +496,112 @@ ggsave(plot = mod_weight_wing_forest_plot_combo,
        filename = "R/products/figures/svg/mod_weight_wing_forest.svg",
        width = 6.5,
        height = 7, units = "in")
+
+load("R/output/stats_mod_weight_wing.rds")
+# extract fitted values of chick weight v egg volume model
+mod_weight_wing_fits <- 
+  as.data.frame(effect(term = "wing", mod = stats_mod_weight_wing$mod, 
+                       xlevels = list(wing = seq(min(cap_05_09_std_pca[, "wing"], na.rm = TRUE),
+                                                   max(cap_05_09_std_pca[, "wing"], na.rm = TRUE), 0.01))))
+# model summary a diagnostics
+summary(stats_mod_weight_wing$mod)
+plot(allEffects(stats_mod_weight_wing$mod))
+coefplot2(stats_mod_weight_wing$mod)
+summary(glht(stats_mod_weight_wing$mod))
+
+#### Plot: weight v wing length ----
+wing_weight_plot <-
+  ggplot() +
+  # geom_errorbarh(data = cap_05_09_std_pca,
+  #                aes(y = weight, x = wing, 
+  #                    xmin = weight - sd_egg_volume, 
+  #                    xmax = weight + sd_egg_volume), 
+  #                alpha = 0.3, size = 0.5, linetype = "solid",
+  #                color = brewer.pal(8, "Set1")[c(2)]) +
+  geom_errorbar(data = cap_05_09_std_pca %>% 
+                  group_by(capture_id, wing) %>% 
+                  summarise(mean_weight = mean(weight),
+                            max_weight = max(weight),
+                            min_weight = min(weight)),
+                aes(y = mean_weight, x = wing,
+                    ymin = min_weight,
+                    ymax = max_weight),
+                alpha = 0.3, size = 0.5, width = 0, linetype = "solid",
+                color = brewer.pal(8, "Set1")[c(2)]) +
+  geom_point(data = 
+               cap_05_09_std_pca %>% 
+               group_by(capture_id, wing) %>% 
+               summarise(mean_weight = mean(weight),
+                         sd_weight = sd(weight)),
+             aes(x = wing, y = mean_weight),
+             alpha = 0.4,
+             shape = 19, #21, 
+             color = brewer.pal(8, "Set1")[c(2)]) +
+  geom_line(data = mod_weight_wing_fits, aes(x = wing, y = fit),
+            lwd = 0.5) +
+  geom_ribbon(data = mod_weight_wing_fits, aes(x = wing, 
+                                               ymax = upper, ymin = lower),
+              lwd = 1, alpha = 0.25) +
+  luke_theme +
+  theme(panel.border = element_blank(),
+        plot.margin = margin(0, 0, 0, 0.5, "cm"),
+        axis.title.y = element_text(vjust = 5)) +
+  scale_y_continuous(limits = c(min(cap_05_09_std_pca$weight, na.rm = TRUE), 
+                                max(cap_05_09_std_pca$weight, na.rm = TRUE) * 1.05)) +
+  ylab("body mass (g; mean and range)") +
+  xlab("wing length (mm)")
+
+ggsave(plot = wing_weight_plot,
+       filename = "R/products/figures/svg/wing_weight_plot.svg",
+       width = 5.29*2,
+       height = 5.29*2, units = "cm")
+
+wing_dist_plot <-
+  cap_05_09_std_pca %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = wing, y = 31), 
+               fill = brewer.pal(8, "Set1")[c(2)], 
+               color = brewer.pal(8, "Set1")[c(2)],
+               width = 2, alpha = 0.5) +
+  geom_jitter(aes(x = wing, y = 28), 
+              fill = brewer.pal(8, "Set1")[c(2)], 
+              color = brewer.pal(8, "Set1")[c(2)],
+              height = 1, alpha = 0.5) +
+  geom_histogram(alpha = 0.5, aes(wing), 
+                 fill = brewer.pal(8, "Set1")[c(2)], 
+                 binwidth = 1) +
+  luke_theme +
+  theme(axis.title.x = element_text(hjust = 0.4),
+        panel.border = element_blank(),
+        plot.margin = margin(0, 0, 0, 0.5, "cm")) +
+  ylab("Number of males                        ") +
+  xlab("wing length (mm)") +
+  # scale_x_reverse(limits = c(25/10, 20/10),
+  #                 breaks = c(seq(from = 2, to = 2.4, by = 0.1))) +
+  scale_y_continuous(limits = c(0, 32),
+                     breaks = c(0, 5, 10, 15, 20, 25), position = "left")
+
+weight_dist_plot <-
+  cap_05_09_std_pca %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = wing, y = 31), 
+               fill = brewer.pal(8, "Set1")[c(2)], 
+               color = brewer.pal(8, "Set1")[c(2)],
+               width = 2, alpha = 0.5) +
+  geom_jitter(aes(x = wing, y = 28), 
+              fill = brewer.pal(8, "Set1")[c(2)], 
+              color = brewer.pal(8, "Set1")[c(2)],
+              height = 1, alpha = 0.5) +
+  geom_histogram(alpha = 0.5, aes(wing), 
+                 fill = brewer.pal(8, "Set1")[c(2)], 
+                 binwidth = 1) +
+  luke_theme +
+  theme(axis.title.x = element_text(hjust = 0.4),
+        panel.border = element_blank(),
+        plot.margin = margin(0, 0, 0, 0.5, "cm")) +
+  ylab("Number of males                        ") +
+  xlab("wing length (mm)") +
+  # scale_x_reverse(limits = c(25/10, 20/10),
+  #                 breaks = c(seq(from = 2, to = 2.4, by = 0.1))) +
+  scale_y_continuous(limits = c(0, 32),
+                     breaks = c(0, 5, 10, 15, 20, 25), position = "left")

@@ -13,7 +13,7 @@ cap_all <-
   rename(capdt = start_capture_date_time,
          gpsdt = gps_date_time) %>% 
   left_join(., dbq(q = "SELECT * FROM PESAatBARROW.SEX") %>% 
-              select(ID, sex), 
+              dplyr::select(ID, sex), 
             by = "ID", multiple = "all") %>%
   distinct() %>% 
   filter(sex == 1) %>% 
