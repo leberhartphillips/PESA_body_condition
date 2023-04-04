@@ -129,6 +129,12 @@ mod_weight_wing <-
          (1 | capture_id),
        data = cap_05_09_std_pca)
 
+# model summary a diagnostics
+summary(mod_weight_wing)
+plot(allEffects(mod_weight_wing))
+coefplot2(mod_weight_wing)
+summary(glht(mod_weight_wing))
+
 # tidy_mod_weight_PC1 <-
 #   tidy(mod_weight, conf.int = TRUE, conf.method = "boot", nsim = 1000)
 
@@ -497,19 +503,16 @@ ggsave(plot = mod_weight_wing_forest_plot_combo,
        width = 6.5,
        height = 7, units = "in")
 
+#### Plot: weight v wing length ----
 load("R/output/stats_mod_weight_wing.rds")
+plot(allEffects(mod_weight_wing))
+
 # extract fitted values of chick weight v egg volume model
 mod_weight_wing_fits <- 
   as.data.frame(effect(term = "wing", mod = stats_mod_weight_wing$mod, 
                        xlevels = list(wing = seq(min(cap_05_09_std_pca[, "wing"], na.rm = TRUE),
-                                                   max(cap_05_09_std_pca[, "wing"], na.rm = TRUE), 0.01))))
-# model summary a diagnostics
-summary(stats_mod_weight_wing$mod)
-plot(allEffects(stats_mod_weight_wing$mod))
-coefplot2(stats_mod_weight_wing$mod)
-summary(glht(stats_mod_weight_wing$mod))
+                                                 max(cap_05_09_std_pca[, "wing"], na.rm = TRUE), 0.01))))
 
-#### Plot: weight v wing length ----
 wing_weight_plot <-
   ggplot() +
   # geom_errorbarh(data = cap_05_09_std_pca,
@@ -551,57 +554,441 @@ wing_weight_plot <-
   ylab("body mass (g; mean and range)") +
   xlab("wing length (mm)")
 
-ggsave(plot = wing_weight_plot,
-       filename = "R/products/figures/svg/wing_weight_plot.svg",
-       width = 5.29*2,
-       height = 5.29*2, units = "cm")
-
 wing_dist_plot <-
   cap_05_09_std_pca %>% 
+  group_by(capture_id) %>% 
+  arrange(capture_id, gpsdt) %>% 
+  slice(1) %>% 
+  ungroup() %>% 
+  na.omit() %>% 
   ggplot() + 
-  geom_boxplot(aes(x = wing, y = 31), 
+  geom_boxplot(aes(x = wing, y = 16), 
                fill = brewer.pal(8, "Set1")[c(2)], 
                color = brewer.pal(8, "Set1")[c(2)],
-               width = 2, alpha = 0.5) +
-  geom_jitter(aes(x = wing, y = 28), 
+               width = 1, alpha = 0.5) +
+  geom_jitter(aes(x = wing, y = 13), 
               fill = brewer.pal(8, "Set1")[c(2)], 
               color = brewer.pal(8, "Set1")[c(2)],
-              height = 1, alpha = 0.5) +
+              height = 0.5, alpha = 0.5) +
   geom_histogram(alpha = 0.5, aes(wing), 
                  fill = brewer.pal(8, "Set1")[c(2)], 
                  binwidth = 1) +
   luke_theme +
-  theme(axis.title.x = element_text(hjust = 0.4),
+  theme(axis.title.y = element_text(hjust = 0.1),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
         panel.border = element_blank(),
         plot.margin = margin(0, 0, 0, 0.5, "cm")) +
-  ylab("Number of males                        ") +
+  ylab(expression(italic(N)[males])) +
   xlab("wing length (mm)") +
-  # scale_x_reverse(limits = c(25/10, 20/10),
-  #                 breaks = c(seq(from = 2, to = 2.4, by = 0.1))) +
-  scale_y_continuous(limits = c(0, 32),
-                     breaks = c(0, 5, 10, 15, 20, 25), position = "left")
+  scale_y_continuous(limits = c(0, 17),
+                     breaks = c(0, 5, 10), position = "left")
 
 weight_dist_plot <-
   cap_05_09_std_pca %>% 
+  group_by(capture_id) %>% 
+  summarise(weight = mean(weight, na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  na.omit() %>% 
   ggplot() + 
-  geom_boxplot(aes(x = wing, y = 31), 
+  geom_boxplot(aes(x = weight, y = 16), 
                fill = brewer.pal(8, "Set1")[c(2)], 
                color = brewer.pal(8, "Set1")[c(2)],
-               width = 2, alpha = 0.5) +
-  geom_jitter(aes(x = wing, y = 28), 
+               width = 1, alpha = 0.5) +
+  geom_jitter(aes(x = weight, y = 13), 
               fill = brewer.pal(8, "Set1")[c(2)], 
               color = brewer.pal(8, "Set1")[c(2)],
-              height = 1, alpha = 0.5) +
-  geom_histogram(alpha = 0.5, aes(wing), 
+              height = 0.5, alpha = 0.5) +
+  geom_histogram(alpha = 0.5, aes(weight), 
+                 fill = brewer.pal(8, "Set1")[c(2)], 
+                 binwidth = 2) +
+  luke_theme +
+  theme(axis.title.x = element_text(hjust = 0.1),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.border = element_blank(),
+        plot.margin = margin(0, 0, 0, 0.5, "cm")) +
+  ylab(expression(italic(N)[males])) +
+  xlab("body mass (g)") +
+  scale_x_continuous(limits = c(min(cap_05_09_std_pca$weight, na.rm = TRUE), 
+                                max(cap_05_09_std_pca$weight, na.rm = TRUE) * 1.05)) +
+  scale_y_continuous(limits = c(0, 17),
+                     breaks = c(0, 5, 10), position = "left") +
+  coord_flip()
+
+wing_weight_combo_plot <-   
+  wing_dist_plot + plot_spacer() + wing_weight_plot + weight_dist_plot + 
+  plot_layout(ncol = 2,
+              heights = unit(c(2, 8), 'cm'),
+              widths = unit(c(8, 2), 'cm'))
+
+ggsave(plot = wing_weight_combo_plot,
+       filename = "R/products/figures/svg/wing_weight_combo_plot.svg",
+       width = 13,
+       height = 13, units = "cm")
+
+ggsave(plot = wing_weight_combo_plot,
+       filename = "R/products/figures/jpg/wing_weight_combo_plot.jpg",
+       width = 13,
+       height = 13, units = "cm")
+
+#### Plot: weight v measure deviation ----
+load("R/output/stats_mod_weight_wing.rds")
+plot(allEffects(mod_weight_wing))
+
+# extract fitted values of chick weight v egg volume model
+mod_weight_mes_dev_fits <- 
+  as.data.frame(effect(term = "measure_deviation", mod = stats_mod_weight_wing$mod, 
+                       xlevels = list(measure_deviation = seq(min(cap_05_09_std_pca[, "measure_deviation"], na.rm = TRUE),
+                                                              max(cap_05_09_std_pca[, "measure_deviation"], na.rm = TRUE), 0.01))))
+
+mes_dev_weight_plot <-
+  ggplot() +
+  geom_point(data = cap_05_09_std_pca,
+             aes(x = measure_deviation, y = weight, group = capture_id),
+             alpha = 0.4,
+             shape = 19,
+             color = brewer.pal(8, "Set1")[c(2)]) +
+  geom_line(data = cap_05_09_std_pca,
+            aes(x = measure_deviation, y = weight, group = capture_id),
+            lwd = 0.5,
+            alpha = 0.4,
+            color = brewer.pal(8, "Set1")[c(2)]) +
+  geom_line(data = mod_weight_mes_dev_fits,
+            aes(x = measure_deviation, y = fit),
+            lwd = 1,
+            color = brewer.pal(8, "Set1")[c(2)]) +
+  geom_ribbon(data = mod_weight_mes_dev_fits, aes(x = measure_deviation, 
+                                               ymax = upper, ymin = lower),
+              lwd = 1, alpha = 0.25) +
+  luke_theme +
+  theme(panel.border = element_blank(),
+        plot.margin = margin(0, 0, 0.5, 0.5, "cm"),
+        axis.title.y = element_text(vjust = 5)) +
+  scale_y_continuous(limits = c(min(cap_05_09_std_pca$weight, na.rm = TRUE), 
+                                max(cap_05_09_std_pca$weight, na.rm = TRUE) * 1.05)) +
+  ylab("body mass (g)") +
+  xlab("time since first measure (days)")
+
+mes_dev_dist_plot <-
+  cap_05_09_std_pca %>% 
+  group_by(capture_id) %>% 
+  arrange(capture_id, gpsdt) %>% 
+  slice(2) %>% 
+  ungroup() %>% 
+  na.omit() %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = measure_deviation, y = 16), 
+               fill = brewer.pal(8, "Set1")[c(2)], 
+               color = brewer.pal(8, "Set1")[c(2)],
+               width = 1, alpha = 0.5) +
+  geom_jitter(aes(x = measure_deviation, y = 13), 
+              fill = brewer.pal(8, "Set1")[c(2)], 
+              color = brewer.pal(8, "Set1")[c(2)],
+              height = 0.5, alpha = 0.5) +
+  geom_histogram(alpha = 0.5, aes(measure_deviation), 
                  fill = brewer.pal(8, "Set1")[c(2)], 
                  binwidth = 1) +
   luke_theme +
-  theme(axis.title.x = element_text(hjust = 0.4),
+  theme(axis.title.y = element_text(hjust = 0.1),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
         panel.border = element_blank(),
         plot.margin = margin(0, 0, 0, 0.5, "cm")) +
-  ylab("Number of males                        ") +
+  ylab(expression(italic(N)[males])) +
   xlab("wing length (mm)") +
-  # scale_x_reverse(limits = c(25/10, 20/10),
-  #                 breaks = c(seq(from = 2, to = 2.4, by = 0.1))) +
-  scale_y_continuous(limits = c(0, 32),
-                     breaks = c(0, 5, 10, 15, 20, 25), position = "left")
+  scale_y_continuous(limits = c(0, 17),
+                     breaks = c(0, 5, 10), position = "left") +
+  annotate(geom = "text", y = 9, x = 20,
+           label = "second measures",
+           color = "black", size = 2, fontface = 'italic', hjust = 1)
+
+weight_dist_plot <-
+  cap_05_09_std_pca %>% 
+  group_by(capture_id) %>% 
+  summarise(weight = mean(weight, na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  na.omit() %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = weight, y = 16), 
+               fill = brewer.pal(8, "Set1")[c(2)], 
+               color = brewer.pal(8, "Set1")[c(2)],
+               width = 1, alpha = 0.5) +
+  geom_jitter(aes(x = weight, y = 13), 
+              fill = brewer.pal(8, "Set1")[c(2)], 
+              color = brewer.pal(8, "Set1")[c(2)],
+              height = 0.5, alpha = 0.5) +
+  geom_histogram(alpha = 0.5, aes(weight), 
+                 fill = brewer.pal(8, "Set1")[c(2)], 
+                 binwidth = 2) +
+  luke_theme +
+  theme(axis.title.x = element_text(hjust = 0.1),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.border = element_blank(),
+        plot.margin = margin(0, 0, 0, 0.5, "cm")) +
+  ylab(expression(italic(N)[males])) +
+  xlab("body mass (g)") +
+  scale_x_continuous(limits = c(min(cap_05_09_std_pca$weight, na.rm = TRUE), 
+                                max(cap_05_09_std_pca$weight, na.rm = TRUE) * 1.05)) +
+  scale_y_continuous(limits = c(0, 17),
+                     breaks = c(0, 5, 10), position = "left") +
+  coord_flip()
+
+mes_dev_weight_combo_plot <-   
+  mes_dev_dist_plot + plot_spacer() + mes_dev_weight_plot + weight_dist_plot + 
+  plot_layout(ncol = 2,
+              heights = unit(c(2, 8), 'cm'),
+              widths = unit(c(8, 2), 'cm'))
+
+ggsave(plot = mes_dev_weight_combo_plot,
+       filename = "R/products/figures/svg/mes_dev_weight_combo_plot.svg",
+       width = 13,
+       height = 13, units = "cm")
+
+ggsave(plot = mes_dev_weight_combo_plot,
+       filename = "R/products/figures/jpg/mes_dev_weight_combo_plot.jpg",
+       width = 13,
+       height = 13, units = "cm")
+
+#### Plot: weight v first measure ----
+load("R/output/stats_mod_weight_wing.rds")
+plot(allEffects(mod_weight_wing))
+
+# extract fitted values of chick weight v egg volume model
+mod_weight_first_mes_fits <- 
+  as.data.frame(effect(term = "first_measure", mod = stats_mod_weight_wing$mod, 
+                       xlevels = list(first_measure = seq(min(cap_05_09_std_pca[, "first_measure"], na.rm = TRUE),
+                                                          max(cap_05_09_std_pca[, "first_measure"], na.rm = TRUE), 0.01))))
+
+first_mes_weight_plot <-
+  cap_05_09_std_pca %>% 
+  group_by(capture_id) %>% 
+  arrange(capture_id, gpsdt) %>% 
+  slice(1) %>% 
+  ungroup() %>% 
+  na.omit() %>% 
+  ggplot() +
+  geom_point(aes(x = first_measure, y = weight),
+             alpha = 0.4,
+             shape = 19,
+             color = brewer.pal(8, "Set1")[c(2)]) +
+  geom_line(data = mod_weight_first_mes_fits,
+            aes(x = first_measure, y = fit),
+            lwd = 1,
+            color = brewer.pal(8, "Set1")[c(2)]) +
+  geom_ribbon(data = mod_weight_first_mes_fits, aes(x = first_measure, 
+                                                  ymax = upper, ymin = lower),
+              lwd = 1, alpha = 0.25) +
+  luke_theme +
+  theme(panel.border = element_blank(),
+        plot.margin = margin(0, 0, 0.5, 0.5, "cm"),
+        axis.title.y = element_text(vjust = 5)) +
+  scale_y_continuous(limits = c(min(cap_05_09_std_pca$weight, na.rm = TRUE), 
+                                max(cap_05_09_std_pca$weight, na.rm = TRUE) * 1.05)) +
+  ylab("body mass (g)") +
+  xlab("standardized date of first measure")
+
+first_mes_dist_plot <-
+  cap_05_09_std_pca %>% 
+  group_by(capture_id) %>% 
+  arrange(capture_id, gpsdt) %>% 
+  slice(1) %>% 
+  ungroup() %>% 
+  na.omit() %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = first_measure, y = 16), 
+               fill = brewer.pal(8, "Set1")[c(2)], 
+               color = brewer.pal(8, "Set1")[c(2)],
+               width = 1, alpha = 0.5) +
+  geom_jitter(aes(x = first_measure, y = 13), 
+              fill = brewer.pal(8, "Set1")[c(2)], 
+              color = brewer.pal(8, "Set1")[c(2)],
+              height = 0.5, alpha = 0.5) +
+  geom_histogram(alpha = 0.5, aes(first_measure), 
+                 fill = brewer.pal(8, "Set1")[c(2)], 
+                 binwidth = 1) +
+  luke_theme +
+  theme(axis.title.y = element_text(hjust = 0.1),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        panel.border = element_blank(),
+        plot.margin = margin(0, 0, 0, 0.5, "cm")) +
+  ylab(expression(italic(N)[males])) +
+  xlab("standardized date of first measure") +
+  scale_y_continuous(limits = c(0, 17),
+                     breaks = c(0, 5, 10), position = "left")
+
+weight_dist_plot <-
+  cap_05_09_std_pca %>% 
+  group_by(capture_id) %>% 
+  arrange(capture_id, gpsdt) %>% 
+  slice(1) %>% 
+  ungroup() %>% 
+  na.omit() %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = weight, y = 16), 
+               fill = brewer.pal(8, "Set1")[c(2)], 
+               color = brewer.pal(8, "Set1")[c(2)],
+               width = 1, alpha = 0.5) +
+  geom_jitter(aes(x = weight, y = 13), 
+              fill = brewer.pal(8, "Set1")[c(2)], 
+              color = brewer.pal(8, "Set1")[c(2)],
+              height = 0.5, alpha = 0.5) +
+  geom_histogram(alpha = 0.5, aes(weight), 
+                 fill = brewer.pal(8, "Set1")[c(2)], 
+                 binwidth = 2) +
+  luke_theme +
+  theme(axis.title.x = element_text(hjust = 0.1),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.border = element_blank(),
+        plot.margin = margin(0, 0, 0, 0.5, "cm")) +
+  ylab(expression(italic(N)[males])) +
+  xlab("body mass (g)") +
+  scale_x_continuous(limits = c(min(cap_05_09_std_pca$weight, na.rm = TRUE), 
+                                max(cap_05_09_std_pca$weight, na.rm = TRUE) * 1.05)) +
+  scale_y_continuous(limits = c(0, 17),
+                     breaks = c(0, 5, 10), position = "left") +
+  coord_flip()
+
+first_mes_weight_combo_plot <-   
+  first_mes_dist_plot + plot_spacer() + first_mes_weight_plot + weight_dist_plot + 
+  plot_layout(ncol = 2,
+              heights = unit(c(2, 8), 'cm'),
+              widths = unit(c(8, 2), 'cm'))
+
+ggsave(plot = first_mes_weight_combo_plot,
+       filename = "R/products/figures/svg/first_mes_weight_combo_plot.svg",
+       width = 13,
+       height = 13, units = "cm")
+
+ggsave(plot = first_mes_weight_combo_plot,
+       filename = "R/products/figures/jpg/first_mes_weight_combo_plot.jpg",
+       width = 13,
+       height = 13, units = "cm")
+
+#### Plot: weight v last measure ----
+load("R/output/stats_mod_weight_wing.rds")
+plot(allEffects(mod_weight_wing))
+
+# extract fitted values of chick weight v egg volume model
+mod_weight_last_mes_fits <- 
+  as.data.frame(effect(term = "last_measure", mod = stats_mod_weight_wing$mod, 
+                       xlevels = list(last_measure = seq(min(cap_05_09_std_pca[, "last_measure"], na.rm = TRUE),
+                                                          max(cap_05_09_std_pca[, "last_measure"], na.rm = TRUE), 0.01))))
+
+last_mes_weight_plot <-
+  cap_05_09_std_pca %>% 
+  group_by(capture_id) %>% 
+  arrange(capture_id, gpsdt) %>% 
+  slice(n()) %>% 
+  ungroup() %>% 
+  na.omit() %>% 
+  ggplot() +
+  geom_point(aes(x = last_measure, y = weight),
+             alpha = 0.4,
+             shape = 19,
+             color = brewer.pal(8, "Set1")[c(2)]) +
+  geom_line(data = mod_weight_last_mes_fits,
+            aes(x = last_measure, y = fit),
+            lwd = 1,
+            color = brewer.pal(8, "Set1")[c(2)]) +
+  geom_ribbon(data = mod_weight_last_mes_fits, aes(x = last_measure, 
+                                                    ymax = upper, ymin = lower),
+              lwd = 1, alpha = 0.25) +
+  luke_theme +
+  theme(panel.border = element_blank(),
+        plot.margin = margin(0, 0, 0.5, 0.5, "cm"),
+        axis.title.y = element_text(vjust = 5)) +
+  scale_y_continuous(limits = c(min(cap_05_09_std_pca$weight, na.rm = TRUE), 
+                                max(cap_05_09_std_pca$weight, na.rm = TRUE) * 1.05)) +
+  ylab("body mass (g)") +
+  xlab("standardized date of last measure")
+
+last_mes_dist_plot <-
+  cap_05_09_std_pca %>% 
+  group_by(capture_id) %>% 
+  arrange(capture_id, gpsdt) %>% 
+  slice(n()) %>% 
+  ungroup() %>% 
+  na.omit() %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = last_measure, y = 16), 
+               fill = brewer.pal(8, "Set1")[c(2)], 
+               color = brewer.pal(8, "Set1")[c(2)],
+               width = 1, alpha = 0.5) +
+  geom_jitter(aes(x = last_measure, y = 13), 
+              fill = brewer.pal(8, "Set1")[c(2)], 
+              color = brewer.pal(8, "Set1")[c(2)],
+              height = 0.5, alpha = 0.5) +
+  geom_histogram(alpha = 0.5, aes(last_measure), 
+                 fill = brewer.pal(8, "Set1")[c(2)], 
+                 binwidth = 1) +
+  luke_theme +
+  theme(axis.title.y = element_text(hjust = 0.1),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        panel.border = element_blank(),
+        plot.margin = margin(0, 0, 0, 0.5, "cm")) +
+  ylab(expression(italic(N)[males])) +
+  xlab("standardized date of last measure") +
+  scale_y_continuous(limits = c(0, 17),
+                     breaks = c(0, 5, 10), position = "left")
+
+weight_dist_plot <-
+  cap_05_09_std_pca %>% 
+  group_by(capture_id) %>% 
+  arrange(capture_id, gpsdt) %>% 
+  slice(n()) %>% 
+  ungroup() %>% 
+  na.omit() %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = weight, y = 16), 
+               fill = brewer.pal(8, "Set1")[c(2)], 
+               color = brewer.pal(8, "Set1")[c(2)],
+               width = 1, alpha = 0.5) +
+  geom_jitter(aes(x = weight, y = 13), 
+              fill = brewer.pal(8, "Set1")[c(2)], 
+              color = brewer.pal(8, "Set1")[c(2)],
+              height = 0.5, alpha = 0.5) +
+  geom_histogram(alpha = 0.5, aes(weight), 
+                 fill = brewer.pal(8, "Set1")[c(2)], 
+                 binwidth = 2) +
+  luke_theme +
+  theme(axis.title.x = element_text(hjust = 0.1),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.border = element_blank(),
+        plot.margin = margin(0, 0, 0, 0.5, "cm")) +
+  ylab(expression(italic(N)[males])) +
+  xlab("body mass (g)") +
+  scale_x_continuous(limits = c(min(cap_05_09_std_pca$weight, na.rm = TRUE), 
+                                max(cap_05_09_std_pca$weight, na.rm = TRUE) * 1.05)) +
+  scale_y_continuous(limits = c(0, 17),
+                     breaks = c(0, 5, 10), position = "left") +
+  coord_flip()
+
+last_mes_weight_combo_plot <-   
+  last_mes_dist_plot + plot_spacer() + last_mes_weight_plot + weight_dist_plot + 
+  plot_layout(ncol = 2,
+              heights = unit(c(2, 8), 'cm'),
+              widths = unit(c(8, 2), 'cm'))
+
+ggsave(plot = last_mes_weight_combo_plot,
+       filename = "R/products/figures/svg/last_mes_weight_combo_plot.svg",
+       width = 13,
+       height = 13, units = "cm")
+
+ggsave(plot = last_mes_weight_combo_plot,
+       filename = "R/products/figures/jpg/last_mes_weight_combo_plot.jpg",
+       width = 13,
+       height = 13, units = "cm")
