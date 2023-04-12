@@ -16,7 +16,7 @@ editor_options:
 ```{r, settings_data, echo=FALSE}
 # source(here::here("R/DAT/wrangle_datasets.R"))
 # source(here::here("R/project/project_plotting.R"))
-
+load("/Users/luketheduke2/Documents/Academic/Postdoc_Bart/projects/PESA_body_condition/R/DAT/pat.rds")
 load("/Users/luketheduke2/Documents/Academic/Postdoc_Bart/projects/PESA_body_condition/R/DAT/cap_05_09.rds")
 ```
 
@@ -81,9 +81,11 @@ col_all <- "#2E3440"
 ```
 
 ## Standardize captures by year
-Rationale: despite the short season, early arriving males likely face different conditions that later arriving males that may impact body mass dynamics during their tenure at Barrow. For example, early arriving males may face different levels of intra-sexual competition, food availability, or ambient climate-conditions than later arriving males which would influence metabolic demands, and hence shifts in repeated measures of body mass. To standardize measurements to the year-specific phenology of males, we first extract the first captures of all males in years 2005 to 2009 from the PESAatBARROW.CAPTURES database (i.e., even those that were captured only once). Then, for each capture, we calculate the time since midnight on January 1 of a capture's given year to acquire a Julian-esque timestamp.
+
+Despite the short season, early arriving males likely face different conditions that later arriving males that may impact body mass dynamics during their tenure at Barrow. For example, early arriving males may face different levels of intra-sexual competition, food availability, or ambient climate-conditions than later arriving males which would influence metabolic demands, and hence shifts in repeated measures of body mass. To standardize measurements to the year-specific phenology of males, we first extract the first captures of all males in years 2005 to 2009 from the PESAatBARROW.CAPTURES database (i.e., even those that were captured only once). Then, for each capture, we calculate the time since midnight on January 1 of a capture's given year to acquire a Julian-esque timestamp.
+
 ```{r}
-# take all captures (i.e., regardless of if they were )
+# take all captures (i.e., regardless of if they were captured twice)
 cap_05_09_phenology <-
   cap_05_09 %>% 
   mutate(capture_id = paste(ID, year_, sep = "_")) %>% 
@@ -138,7 +140,8 @@ cap_05_09 %>%
 # standardize capture date according to the year
 cap_05_09_std <- 
   cap_05_09 %>% 
-  filter(n_by_id > 1, !is.na(weight)) %>% 
+  filter(n_by_id > 1, !is.na(weight)) %>%
+  # filter(!is.na(weight)) %>% 
   mutate(capture_id = paste(ID, year_, sep = "_")) %>% 
   dplyr::select(-capdt, -ID) %>% 
   mutate(gpsdt_year_start = ymd_hms(paste0(year(gpsdt), "-01-01 00:00:00"))) %>% 
@@ -150,13 +153,16 @@ cap_05_09_std <-
   mutate(date_deviance = gpsdt_std - gpsdt_std[which.min(gpsdt_std)],
          first_date = gpsdt_std[which.min(gpsdt_std)],
          last_date = gpsdt_std[which.max(gpsdt_std)]) %>% 
-  dplyr::select(year_, capture_id, gpsdt, date_deviance, first_date, 
+  dplyr::select(year_, capture_id, gpsdt, gpsdt_std, date_deviance, first_date, 
                 last_date, weight, culmen, totalHead, tarsus,  wing, n_by_id)
 ```
 
 ## Evaluate static morphometric measures of body structure with a PCA
-Rationale: body mass changes may differ according to the structural size of an individual and so in our model we will need to control for structural size. In the PESAatBARROW.CAPTURES database we have 4 structural size measures collected for each individual: culmen, totalHead, tarsus, and wing. Here we run a Principle Component Analysis of these 4 measures to assess their correliniearity, then we evaluate how each measure correlates with body mass compared to PC1 of the PCA. The results of the PCA show that PC1 captures ~77% of the variance in the 4 measures, however when we compare the correlations of PC1 with weight vs. wing with weight, we can see that we don't gain alot of inference with PC1. Thus we proceed with using wing as our structural size control.
+
+Body mass changes may differ according to the structural size of an individual and so in our model we will need to control for structural size. In the PESAatBARROW.CAPTURES database we have 4 structural size measures collected for each individual: culmen, totalHead, tarsus, and wing. Here we run a Principle Component Analysis of these 4 measures to assess their collinearity, then we evaluate how each measure correlates with body mass compared to PC1 of the PCA. The results of the PCA show that PC1 captures \~77% of the variance in the 4 measures, however when we compare the correlations of PC1 with weight vs. wing with weight, we can see that we do not gain much more of inference with PC1. Thus we proceed with using wing as our structural size control as it is more parsimonious.
+
 ```{r}
+# similar approach to Peig and Green (2010), Appendix 3 (https://besjournals.onlinelibrary.wiley.com/action/downloadSupplement?doi=10.1111%2Fj.1365-2435.2010.01751.x&file=FEC_1751_sm_AppendixS3.pdf)
 # PCA of static body structural measurements (culmen, totalHead, tarsus, wing)
 static_measures_pca <-
   cap_05_09_std %>% 
@@ -186,7 +192,10 @@ cap_05_09_std_pca <-
   left_join(cap_05_09_std %>% 
               dplyr::select(-c(culmen, totalHead, tarsus,  wing)), ., 
             by = "capture_id", multiple = "all") %>% 
-  na.omit()
+  na.omit() %>% 
+  mutate(year_ = factor(year_, levels = c(2005, 2006, 2007, 2008, 2009))) %>% 
+  mutate(log_weight = log(weight),
+         log_wing = log(wing))
 
 # ggplot(cap_05_09_std_pca, 
 #        aes(x = structure_pc1, y = weight)) + 
@@ -206,19 +215,45 @@ cap_05_09_std_pca %>%
   slice(1) %>% 
   ungroup() %>% 
   na.omit() %>% 
-  dplyr::select(weight, culmen, totalHead, tarsus,  wing, structure_pc1) %>% 
+  mutate(log_weight = log(weight),
+         log_culmen = log(culmen),
+         log_totalHead = log(totalHead),
+         log_tarsus = log(tarsus),
+         log_wing = log(wing)) %>%
+  dplyr::select(log_weight, log_culmen, log_totalHead, log_tarsus, log_wing, structure_pc1) %>% 
   cor() %>% 
   corrplot(type = "upper", method = "number", tl.srt = 45)
 ```
 
+## Assess isometric relationship between weight and wing
+
+```{r}
+cap_all %>% 
+  group_by(ID, year_) %>% 
+  arrange(gpsdt) %>% 
+  slice(1) %>% 
+  ungroup() %>% 
+  mutate(log_weight = log(weight),
+         log_culmen = log(culmen),
+         log_totalHead = log(totalHead),
+         log_tarsus = log(tarsus),
+         log_wing = log(wing)) %>% 
+  select(log_weight, log_culmen, log_totalHead, log_tarsus, log_wing) %>% 
+  na.omit() %>% 
+  cor() %>% 
+  corrplot(type = "upper", method = "number", tl.srt = 45)
+```
+
+
 ## Within-individual centering: Disentagling within- vs. between individual changes in body mass over time
-When assessing how population values of body mass change over time or differ between individuals, it is important to acknowledge that both within- and between-individual processes might be underlying causal mechanisms (van de Pol & Verhulst, 2006). We therefore need to decompose the within-individual from the between-individual components of body mass change in the Barrow PESA male population. Population-level correlations might result from seasonal variation in the arrival (or departure) of males of differing body mass. This is known as selective appearance (or selective disappearance, in the case of last measures). In our study of PESA body mass, one could hypothesize that there is selective appearance of large males: heavier males arrive earlier than lighter males, due to faster spring migration, etc. Moreover, one could also hypothesize that there is selective disappearance of light males: lighter males may leave sooner than heavy males due to their disadvantaged local intra-sexual competitive abilities. These effects result in correlations between tenure and body mass in our cross-sectional analysis of body mass, without reflecting within-individual changes. Within-individual changes in body mass can be caused by factors intrinsic to the individual, such as physical state, reproductive tactics, or by extrinsic factors, such as changes in the availability of food or fertile females on the study site. Within- and between-individual changes are not mutually exclusive: they may go in the same direction (Fig. 1A), or they may go in opposite directions with the between-individual effect masking within-individual patterns of an increase (Fig. 1B) or a decline (Fig. 1C) in body mass.
+
+When assessing how population values of body mass change over time or differ between individuals, it is important to acknowledge that both within- and between-individual processes might be underlying causal mechanisms (van de Pol & Verhulst, 2006). We therefore need to decompose the within- vs. between-individual components of body mass change in the male PESA population. Population-level correlations might result from seasonal variation in the arrival (or departure) of males of differing body mass. This is known as 'selective appearance' (or 'selective disappearance', in the case of last measures). In our study of PESA body mass, one could hypothesize that there is selective appearance of large males: heavier males arrive earlier than lighter males, due to faster spring migration, etc. Moreover, one could also hypothesize that there is selective disappearance of light males: lighter males may depart Barrrow sooner than heavy males due to their disadvantaged local intra-sexual competitive abilities. These effects result in correlations between tenure and body mass in our cross-sectional analysis of body mass, without reflecting within-individual changes. Within-individual changes in body mass can be caused by factors intrinsic to the individual, such as physical state, reproductive tactics, or by extrinsic factors, such as changes in the availability of food or fertile females on the study site. Within- and between-individual changes are not mutually exclusive: they may go in the same direction (Fig. 1A), or they may go in opposite directions with the between-individual effect masking within-individual patterns of an increase (Fig. 1B) or a decline (Fig. 1C) in body mass.
 
 ```{r fig.cap="Figure 1. Schematic showing a hypothetical population of three individuals (faint lines) of different body mass dynamics, compared to ordinary regression lines fitted through all individuals (bold-dashed lines).A few possible scenarios shown here are (A) within-individual increase in body mass and selective appearance of heavy individuals over the season, (B) within-individual increase in body mass and selective disappearance of heavy individuals over the season, and (C) within-individual decline in body mass and selective disappearance of lighter males over the season (C). Modified from van de Pol & Verhulst, 2006, American Naturalist 167:766-773."}
 knitr::include_graphics("products/figures/van_de_Pol_&_Verhulst_2006_fig1.png")
 ```
 
-To control for selective appearance and disappearance of males differing in body mass we fit our mixed-effects model with ‘date first measured’ and ‘date last measured’ as fixed effects – a method that estimates between-individual seasonal effects introduced by selective disappearance and appearance. The raw distributions of ‘date first measured’ and ‘date last measured’ are shown here:
+To control for selective appearance and disappearance of males differing in body mass we fit our mixed-effects model with 'date first measured' and 'date last measured' as fixed effects -- a method that estimates between-individual seasonal effects introduced by selective disappearance and appearance. The raw distributions of 'date first measured' and 'date last measured' are shown here:
 
 ```{r}
 first_d_dist_plot <-
@@ -281,7 +316,7 @@ last_d_dist_plot <-
 last_d_dist_plot
 ```
 
-We model within-individual temporal changes in body mass by fitting a within-individual deviation score for date (henceforth ‘date-deviance’), calculated for individual i at age j as: date_ij – [date first measured]_i  (van de Pol & Verhulst, 2006a; Snijders & Bosker, 2011) – essentially describing the amount of time since the bird’s first encounter in the population (assumed to be a good proxy for the amount of time in Barrow since arrival).
+We model within-individual temporal changes in body mass by fitting a within-individual deviation score for date (henceforth 'date-deviance'), calculated for individual $i$ at age $j$ as: $date_{ij} - {Date FirstMeasured}_i$ (van de Pol & Verhulst, 2006a; Snijders & Bosker, 2011) -- essentially describing the amount of time since the bird's first encounter in the population (assumed to be a good proxy for the amount of time in Barrow since arrival).
 
 ```{r}
 cap_05_09_std_pca %>% 
@@ -312,24 +347,26 @@ cap_05_09_std_pca %>%
 ```
 
 ## Mixed effects model
-Our model evaluates repeated measures of body mass (r_ij) taken from individual i at time j. The random intercept term u_0i and the residual error term e_0ij are assumed to be drawn from a Gaussian distribution with mean 0 and variance sigma^2_u and sigma^2_e, respectively. Our model specifically tests for within-individual change (Beta_W * date_deviance_ij) in the presence of a selective appearance effect (Beta_A * first_date_i) and a selective disappearance effect (Beta_D * last_date_i). Thus the effect of date on first measure (Beta_A) estimates the additional effect to selective appearance given the estimated within-individual change in body mass with time.
+
+Our model evaluates repeated measures of body mass ($r_{ij}$) taken from individual $i$ at time $j$. The random intercept term $u_{0i}$ and the residual error term $e_{0ij}$ are assumed to be drawn from a Gaussian distribution with mean 0 and variance $\sigma^2_u$ and $\sigma^2_e$, respectively. Our model specifically tests for within-individual change ($\beta_W \times DateDeviance_{ij}$) in the presence of a selective appearance effect ($\beta_A \times FirstDate_i$) and a selective disappearance effect ($\beta_D \times LastDate_i$). Thus the effect of date on first measure ($\beta_A$) estimates the additional effect to selective appearance given the estimated within-individual change in body mass with time. Wing is included in our model to control for the structural size of individuals and year was included as a fixed effect to control for annual variation (i.e., as we do not have repeated measures of individuals among years, we can not include year as a random effect). Individual identity was included as a random effect.
+
 ```{r}
 mod_weight <-
-  lmer(weight ~ wing + date_deviance + first_date + last_date +
+  lmer(weight ~ wing + date_deviance + first_date + last_date + year_ +
          (1 | capture_id),
        data = cap_05_09_std_pca)
 ```
 
-To evaluate uncertainty in our parameter estimates we simulating 1000 parametric bootstraps via "broom.mixed::tidy" and the “partR2::partR2” function (Stoffel et al., 2020). Likewise we derived individual-level repeatabilities (i.e., intra-class correlation) by simulating 1000 parametric bootstraps of the mixed-effect model using “rptR::rpt”. We report fixed effects as standardized regression coefficients (i.e., beta weights) and repeatability as the ‘adjusted repeatability’ – interpreted as the repeatability of a given hierarchical group after controlling for fixed effects (Nakagawa & Schielzeth, 2010).
+To evaluate uncertainty in our parameter estimates we simulated 1000 parametric bootstraps via "broom.mixed::tidy" and the "partR2::partR2" function (Stoffel et al., 2020). Likewise we derived individual-level repeatabilities (i.e., intra-class correlation) by simulating 1000 parametric bootstraps of the mixed-effect model using "rptR::rpt". We report fixed effects as standardized regression coefficients (i.e., beta weights) and repeatability as the 'adjusted repeatability' -- interpreted as the repeatability of a given hierarchical group after controlling for fixed effects (Nakagawa & Schielzeth, 2010).
 
-```{r, eval=FALSE}
+```{r, cache=TRUE}
 # Derive confidence intervals of effect sizes from parametric bootstrapping
 tidy_mod_weight <-
   tidy(mod_weight, conf.int = TRUE, conf.method = "boot", nsim = 1000)
 
 # run rptR to obtain repeatabilities of random effects
-rpt_mod_weight_wing <-
-  rpt(weight ~ wing + date_deviance + first_date + last_date +
+rpt_mod_weight <-
+  rpt(weight ~ wing + date_deviance + first_date + last_date + year_ +
         (1 | capture_id),
       grname = c("capture_id", "Fixed"),
       data = cap_05_09_std_pca,
@@ -339,33 +376,41 @@ rpt_mod_weight_wing <-
 
 # run partR2 on each model to obtain marginal R2, parameter estimates, and beta
 # weights
-R2m_mod_weight_wing <-
+R2m_mod_weight <-
   partR2(mod_weight,
          partvars = c("wing",
                       "date_deviance",
                       "first_date",
-                      "last_date"),
+                      "last_date",
+                      "year_"),
          R2_type = "marginal",
          nboot = 1000,
          CI = 0.95,
          max_level = 1)
 
-R2c_mod_weight_wing <-
+R2c_mod_weight <-
   partR2(mod_weight,
          partvars = c("wing",
                       "date_deviance",
                       "first_date",
-                      "last_date"),
+                      "last_date",
+                      "year_"),
          R2_type = "conditional",
          nboot = 1000,
          CI = 0.95,
          max_level = 1)
+
+stats_mod_weight <-
+  list(mod = mod_weight,
+       tidy = tidy_mod_weight,
+       rptR = rpt_mod_weight,
+       partR2m = R2m_mod_weight,
+       partR2c = R2c_mod_weight)
 ```
 
 First let's plot the residuals against the fitted values
-```{r}
-load("/Users/luketheduke2/Documents/Academic/Postdoc_Bart/projects/PESA_body_condition/R/output/stats_mod_weight.rds")
 
+```{r}
 # Get the residuals
 resid <- residuals(stats_mod_weight$mod)
 
@@ -378,9 +423,8 @@ ggplot(data.frame(resid = resid, fitted = fitted(stats_mod_weight$mod)), aes(x =
 ```
 
 Then let's explore the effect sizes and predictions
-```{r}
-load("/Users/luketheduke2/Documents/Academic/Postdoc_Bart/projects/PESA_body_condition/R/output/stats_mod_weight.rds")
 
+```{r}
 #### Table of effect sizes (van de Pol method) ----
 # Retrieve sample sizes
 sample_sizes <-
@@ -412,11 +456,16 @@ mod_comp_names <-
                            "Within ind. temporal change",
                            "Between ind. effect of season (first measure)",
                            "Between ind. effect of season (last measure)",
+                           "Year 2006",
+                           "Year 2007",
+                           "Year 2008",
+                           "Year 2009",
                            "Total Marginal \U1D479\U00B2",
                            "Wing length",
                            "Within ind. temporal change",
                            "Between ind. effect of season (first measure)",
                            "Between ind. effect of season (last measure)",
+                           "Year",
                            "Total Conditional \U1D479\U00B2",
                            "Individual",
                            "Residual",
@@ -502,7 +551,7 @@ allCoefs_mod <-
 
 # # re-organize model components for table
 # allCoefs_mod <-
-#   allCoefs_mod[c(5, 1:4, 6:9, 16, 15, 10:14, 17:28), ]
+#   allCoefs_mod[c(1:4, 8, 6:9, 16, 15, 10:14, 17:28), ]
 # 
 # allCoefs_mod %>% 
 #   round(estimate)
@@ -517,11 +566,11 @@ mod_weight_wing_table <-
              estimate = "Mean estimate",
              coefString = "95% confidence interval") %>% 
   fmt_number(columns = c(estimate),
-             rows = 1:14,
+             rows = 1:19,
              decimals = 2,
              use_seps = FALSE) %>% 
   fmt_number(columns = c(estimate),
-             rows = 15:17,
+             rows = 20:22,
              decimals = 0,
              use_seps = FALSE) %>% 
   sub_missing(columns = 1:4,
@@ -542,12 +591,10 @@ mod_weight_wing_table
 ```
 
 ```{r}
-load("/Users/luketheduke2/Documents/Academic/Postdoc_Bart/projects/PESA_body_condition/R/output/stats_mod_weight.rds")
-
 mod_weight_wing_forest_plot_fixef <-
   allCoefs_mod %>%
   filter(str_detect(effect, "Fixed") & 
-           term != "(Intercept)") %>%
+           term != "(Intercept)" & str_detect(comp_name, "Year", negate = TRUE)) %>%
   mutate(comp_name = fct_relevel(comp_name,
                                  "Between ind. effect of season (last measure)",
                                  "Between ind. effect of season (first measure)",
@@ -577,6 +624,7 @@ mod_weight_wing_forest_plot_partR2 <-
   allCoefs_mod %>%
   filter(str_detect(effect, "Partitioned") & str_detect(comp_name, "Conditional", negate = TRUE)) %>%
   mutate(comp_name = fct_relevel(comp_name,
+                                 "Year",
                                  "Between ind. effect of season (last measure)",
                                  "Between ind. effect of season (first measure)",
                                  "Within ind. temporal change",
@@ -596,7 +644,8 @@ mod_weight_wing_forest_plot_partR2 <-
              alpha = 1, stroke = 0.5) +
   luke_theme +
   theme(axis.title.x = element_text(size = 10, hjust = 0.5)) +
-  scale_y_discrete(labels = c("Between ind. effect of season (last measure)" = expression("Between ind. effect of season (last measure)"),
+  scale_y_discrete(labels = c("Year" = expression("Year"),
+                              "Between ind. effect of season (last measure)" = expression("Between ind. effect of season (last measure)"),
                               "Between ind. effect of season (first measure)" = expression("Between ind. effect of season (first measure)"),
                               "Within ind. temporal change" = expression("Within ind. temporal change"),
                               "Wing length" = expression("Wing length"),
@@ -666,8 +715,6 @@ mod_weight_wing_forest_plot_combo
 
 Relationship between body mass and wing length
 ```{r}
-load("/Users/luketheduke2/Documents/Academic/Postdoc_Bart/projects/PESA_body_condition/R/output/stats_mod_weight.rds")
-
 # extract fitted values
 mod_weight_wing_fits <- 
   as.data.frame(effect(term = "wing", mod = stats_mod_weight$mod, 
@@ -780,9 +827,7 @@ wing_dist_plot + plot_spacer() + wing_weight_plot + weight_dist_plot +
 ```
 
 Within-individual change in body mass over season
-```{r, within-individual plot}
-load("/Users/luketheduke2/Documents/Academic/Postdoc_Bart/projects/PESA_body_condition/R/output/stats_mod_weight.rds")
-
+```{r}
 # extract fitted values
 mod_weight_d_dev_fits <- 
   as.data.frame(effect(term = "date_deviance", mod = stats_mod_weight$mod, 
@@ -891,9 +936,8 @@ d_dev_dist_plot + plot_spacer() + d_dev_weight_plot + weight_dist_plot +
 ```
 
 Between-individual effect of first date (i.e., selective appearance)
-```{r}
-load("/Users/luketheduke2/Documents/Academic/Postdoc_Bart/projects/PESA_body_condition/R/output/stats_mod_weight.rds")
 
+```{r}
 # extract fitted values
 mod_weight_first_d_fits <- 
   as.data.frame(effect(term = "first_date", mod = stats_mod_weight$mod, 
@@ -1000,9 +1044,8 @@ first_d_dist_plot + plot_spacer() + first_d_weight_plot + weight_dist_plot +
 ```
 
 Between-individual effect of last date (i.e., selective disappearance)
-```{r}
-load("/Users/luketheduke2/Documents/Academic/Postdoc_Bart/projects/PESA_body_condition/R/output/stats_mod_weight.rds")
 
+```{r}
 # extract fitted values of chick weight v egg volume model
 mod_weight_last_d_fits <- 
   as.data.frame(effect(term = "last_date", mod = stats_mod_weight$mod, 
@@ -1108,6 +1151,391 @@ last_d_dist_plot + plot_spacer() + last_d_weight_plot + weight_dist_plot +
               widths = unit(c(8, 2), 'cm'))
 ```
 
+## Linking body mass dynamics to paternity
+
+The next step is to link the body mass dynamics to fitness traits of interest, specifically the number of female mates acquired and the the number of young sired.
+
+```{r}
+# explore annual variation in polygyny data
+pat %>% 
+  ggplot()+
+  geom_histogram(aes(N_females)) +
+  facet_grid(year_ ~ .) +
+  ylab(expression(italic(N)[males])) +
+  xlab(expression(italic(N)[female~mates]))
+
+# explore annual variation in paternity data
+pat %>%
+  ggplot()+
+  geom_histogram(aes(N_young)) +
+  facet_grid(year_ ~ .) +
+  ylab(expression(italic(N)[males])) +
+  xlab(expression(italic(N)[offspring~sired]))
+```
+
+Next we will attempt to model how body mass and size are related to polygyny and paternity. To do so, need to decouple the body mass measures from structural size by calculating an index that adjusts the mass of all individuals to a value they would have if they all had the same body size (i.e., to directly compare the relative mass dynamics among males). Several indicies have been proposed in the literature, such as simple ratios between body mass ($M$) and body size ($L$) measures (e.g., $M/L$, ${M/L}^2$ ("$BMI$"; Quételet's index), or ${M/L}^3$ ("$L$"; Fulton's index)) which are popular in the health sciences, the Residual index ($R_i$) which uses the residuals from an OLS regression of M against one or more length measurements, usually after log transformation, or the scaled mass index ($\hat{M}_i$), which standardizes body mass at a fixed value of a linear body measurement based on the scaling relationship between mass and length:
+
+$$
+\hat{M_i} = M_i[ \,\frac{L_0}{L_i}] \,^{\beta_{SMA}}
+$$
+
+where $M_i$ and $L_i$ are the body mass and linear body measurement of individual $i$ respectively; $\beta_{SMA}$ is the scaling exponent estimated by the standardized major axis (SMA) regression of $lnM$ on $lnL$; $L_0$ is an arbitrary value of $L$ (e.g. the arithmetic mean value for the study population); and $\hat{M}_i$ is the predicted body mass for individual $i$ when the linear body measure is standardized to $L_0$.
+
+Here we calculate the different indicies proposed in the literature and assess the best one to use for our study on PESAs. Based on the PCA above, we concluded that the wing measurement was the most parsimonious structural variable associated with body mass, so the best index will be reflected in its lack of correlation with wing (i.e., to decouple body mass from structural size). 
+
+First we extract all the first measures of males across the dataset. The raw correlation of wing and body mass is $r^2$ = 0.42.
+
+```{r}
+SMA_data_prep <- 
+  cap_05_09_std_pca %>% 
+  group_by(capture_id) %>% 
+  arrange(capture_id, gpsdt) %>% 
+  slice(1) %>% 
+  ungroup() %>% 
+  na.omit() %>%
+  select(capture_id, year_, gpsdt, weight, wing, log_weight, log_wing)
+
+cor.test(SMA_data_prep$log_weight, SMA_data_prep$log_wing)
+```
+
+then we calculate the various indices proposed in the literature:
+```{r}
+# scaled mass index constants
+weight_wing_sma_slope <- coef(sma(SMA_data_prep$log_weight ~ SMA_data_prep$log_wing))[2]
+avg_wing <- mean(SMA_data_prep$wing)
+
+# residual index preparation
+mod <- lmer(weight ~ wing + (1 | capture_id), data = cap_05_09_std_pca)
+
+ggplot(data.frame(resid = residuals(mod), fitted = fitted(mod)), aes(x = fitted, y = resid)) +
+  geom_point() +
+  labs(x = "Fitted Values", y = "Residuals") +
+  ggtitle("Residuals vs Fitted Values")
+
+summary(glht(mod))
+plot(allEffects(mod))
+
+# check that the row number is the same (for sanity!)
+nrow(cap_05_09_std_pca_smi)
+length(residuals(mod))
+
+# make a dataframe of the residuals and the unique capture events
+res_df <- 
+  data.frame(capture_id = cap_05_09_std_pca$capture_id, 
+             gpsdt = cap_05_09_std_pca$gpsdt,
+             mod_res = residuals(mod))
+
+# calculate the different indices 
+cap_05_09_std_pca_smi <-
+  cap_05_09_std_pca %>% 
+  ungroup() %>% 
+  mutate(smi = weight * (avg_wing/wing)^weight_wing_sma_slope,
+         M_L = weight/wing,
+         bmi = weight/wing^2,
+         L = weight/wing^3) %>% 
+  left_join(., res_df, by = c("capture_id", "gpsdt"), multiple = "all") %>%
+  distinct()
+
+# evaluate the correlations between the different indices and wing
+cap_05_09_std_pca_smi %>% 
+  group_by(capture_id) %>% 
+  arrange(capture_id, gpsdt) %>% 
+  slice(1) %>% 
+  ungroup() %>% 
+  na.omit() %>% 
+  dplyr::select(weight, culmen, totalHead, tarsus,  wing, structure_pc1, smi, bmi, L, mod_res) %>% 
+  cor() %>% 
+  corrplot(type = "upper", method = "circle", tl.srt = 45, addCoef.col = 'black')
+
+cor.test(cap_05_09_std_pca_smi$weight, cap_05_09_std_pca_smi$wing)
+cor.test(cap_05_09_std_pca_smi$smi, cap_05_09_std_pca_smi$wing)
+cor.test(cap_05_09_std_pca_smi$bmi, cap_05_09_std_pca_smi$wing)
+cor.test(cap_05_09_std_pca_smi$L, cap_05_09_std_pca_smi$wing)
+cor.test(cap_05_09_std_pca_smi$mod_res, cap_05_09_std_pca_smi$wing)
+```
+
+Next we need to transform our repeated measures of the body index to a rate of change (e.g., $\Delta index^{-t}$), which is essentially calculating the difference between the first and last measure and dividing it by the time difference between the two measures. We will also need to bind the paternity data to the dataframe. We are left with a single row per male that allows for models assessing how the change in body condition is associated with polygyny and paternity.
+
+-   do heavier males acquire more offspring/females?
+-   do earlier arriving males acquire more offspring/females?
+-   is body mass change linked to paternity or females acquired?
+
+```{r}
+cap_05_09_std_pca_pat_delta <- 
+  pat %>%
+  mutate(capture_id = paste(IDfather, year_, sep = "_")) %>% 
+  select(-c(IDfather, year_)) %>% 
+  left_join(cap_05_09_std_pca_smi, ., by = "capture_id", multiple = "all") %>%
+  # left_join(cap_05_09_std_pca, ., by = "capture_id", multiple = "all") %>% 
+  na.omit() %>% 
+  group_by(capture_id) %>% 
+  slice(1, n()) %>% 
+  mutate(delta_weight = weight - lag(weight),
+         delta_bmi = bmi - lag(bmi),
+         delta_M_L = M_L - lag(M_L),
+         delta_L = L - lag(L),
+         delta_mod_res = mod_res - lag(mod_res)) %>% 
+  mutate(mass_rate = delta_weight/date_deviance,
+         BMI_rate = delta_bmi/date_deviance,
+         M_L_rate = delta_M_L/date_deviance,
+         L_rate = delta_L/date_deviance,
+         mod_res_rate = delta_mod_res - lag(mod_res)) %>% 
+  # select(-c(gpsdt, n_by_id, culmen, totalHead, tarsus, structure_pc1, log_weight, log_wing)) %>% 
+  na.omit()
+
+cor.test(cap_05_09_std_pca_pat_delta$delta_weight, cap_05_09_std_pca_pat_delta$delta_mod_res)
+plot(cap_05_09_std_pca_pat_delta$delta_weight, cap_05_09_std_pca_pat_delta$delta_mod_res)
+cor.test(cap_05_09_std_pca_pat_delta$mass_rate, cap_05_09_std_pca_pat_delta$mod_res_rate)
+plot(cap_05_09_std_pca_pat_delta$mass_rate, cap_05_09_std_pca_pat_delta$mod_res_rate)
+plot(cap_05_09_std_pca_pat_delta$date_deviance, cap_05_09_std_pca_pat_delta$mass_rate)
+plot(cap_05_09_std_pca_pat_delta$date_deviance, cap_05_09_std_pca_pat_delta$mod_res_rate)
+
+hist(cap_05_09_std_pca_pat_delta$BMI_change)
+```
+
+## Mixed effects model of mating dynamics
+
+Do fatter males arrive earlier? No
+```{r}
+mod_arrival_bmi <- 
+  lmer(first_date ~ BMI + (1 | year_),
+        data = cap_05_09_std_pca_pat_delta)
+
+summary(glht(mod_arrival_bmi))
+plot(allEffects(mod_arrival_bmi))
+
+mod_arrival_res <- 
+  lmer(first_date ~ mod_res + (1 | year_),
+        data = cap_05_09_std_pca_pat_delta)
+
+summary(glht(mod_arrival_res))
+plot(allEffects(mod_arrival_res))
+```
+
+Do males with longer wings arrive earlier? No
+```{r}
+mod_arrival_wing <- 
+  lmer(first_date ~ wing + (1 | year_),
+        data = cap_05_09_std_pca_pat_delta)
+
+summary(glht(mod_arrival_wing))
+plot(allEffects(mod_arrival_wing))
+```
+
+Do heavier males arrive earlier? No
+```{r}
+mod_arrival_weight <- 
+  lmer(first_date ~ weight + (1 | year_),
+        data = cap_05_09_std_pca_pat_delta)
+
+summary(glht(mod_arrival_weight))
+plot(allEffects(mod_arrival_weight))
+```
+
+Is the change in condition over season associated with arrival date? No
+```{r}
+mod_delta_BMI_arrival <-
+  lmer(BMI_rate ~ first_date + (1 | year_),
+       data = cap_05_09_std_pca_pat_delta)
+
+summary(glht(mod_delta_BMI_arrival))
+plot(allEffects(mod_delta_BMI_arrival))
+
+mod_delta_res_arrival <-
+  lmer(mod_res_rate ~ first_date + (1 | year_),
+       data = cap_05_09_std_pca_pat_delta)
+
+summary(glht(mod_delta_BMI_arrival))
+plot(allEffects(mod_delta_BMI_arrival))
+```
+
+Is the change in condition over season associated with departure date? No
+```{r}
+mod_delta_BMI_departure <-
+  lmer(BMI_rate ~ last_date + (1 | year_),
+       data = cap_05_09_std_pca_pat_delta)
+
+summary(glht(mod_delta_BMI_departure))
+plot(allEffects(mod_delta_BMI_departure))
+
+mod_delta_res_departure <-
+  lmer(mod_res_rate ~ last_date + (1 | year_),
+       data = cap_05_09_std_pca_pat_delta)
+
+summary(glht(mod_delta_res_departure))
+plot(allEffects(mod_delta_res_departure))
+```
+
+Do earlier males have more mates? No
+```{r}
+mod_n_females_arrival <-
+  glmer(N_females ~ first_date + (1 | year_),
+        data = cap_05_09_std_pca_pat_delta, family = poisson)
+
+summary(glht(mod_n_females_arrival))
+plot(allEffects(mod_n_females_arrival))
+```
+
+Does departure date relate to the number of mates aquired? No
+```{r}
+mod_n_females_departure <-
+  glmer(N_females ~ last_date + (1 | year_),
+        data = cap_05_09_std_pca_pat_delta, family = poisson)
+
+summary(glht(mod_n_females_departure))
+plot(allEffects(mod_n_females_departure))
+```
+
+Do earlier males sire more young? No
+```{r}
+mod_n_young_arrival <-
+  glmer(N_young ~ first_date + (1 | year_),
+        data = cap_05_09_std_pca_pat_delta, family = poisson)
+
+summary(glht(mod_n_young_arrival))
+plot(allEffects(mod_n_young_arrival))
+```
+
+Does departure date relate to the number of young sired? No
+```{r}
+mod_n_young_departure <-
+  glmer(N_young ~ last_date + (1 | year_),
+        data = cap_05_09_std_pca_pat_delta, family = poisson)
+
+summary(glht(mod_n_young_departure))
+plot(allEffects(mod_n_young_departure))
+```
+
+Is the change in body condition associated with polygyny? No
+```{r}
+mod_n_females_bmi_change <-
+  glmer(N_females ~ BMI_rate + (1 | year_),
+        data = cap_05_09_std_pca_pat_delta, family = poisson)
+
+summary(glht(mod_n_females_bmi_change))
+plot(allEffects(mod_n_females_bmi_change))
+
+mod_n_females_res_change <-
+  glmer(N_females ~ mod_res_rate + (1 | year_),
+        data = cap_05_09_std_pca_pat_delta, family = poisson)
+
+summary(glht(mod_n_females_res_change))
+plot(allEffects(mod_n_females_res_change))
+```
+
+Is the change in body condition associated with paternity? Yes
+strong relationship (p = 0.00333): males with a positive change in BMI sire more young
+```{r}
+mod_n_young_bmi_change <-
+  glmer(N_young ~ BMI_rate + (1 | year_),
+        data = cap_05_09_std_pca_pat_delta, family = poisson)
+
+tbl_regression(mod_n_young_bmi_change, intercept = TRUE)
+ggeffect(mod_n_young_bmi_change) %>% plot()
+
+mod_n_young_mass_change <-
+  glmer(N_young ~ mass_rate + (1 | year_),
+        data = cap_05_09_std_pca_pat_delta, family = poisson)
+
+tbl_regression(mod_n_young_mass_change, intercept = TRUE)
+ggeffect(mod_n_young_mass_change) %>% plot()
+
+mod_n_young_ML_change <-
+  glmer(N_young ~ M_L_rate + (1 | year_),
+        data = cap_05_09_std_pca_pat_delta, family = poisson)
+
+tbl_regression(mod_n_young_ML_change, intercept = TRUE)
+ggeffect(mod_n_young_ML_change) %>% plot()
+
+mod_n_young_L_change <-
+  glmer(N_young ~ L_rate + (1 | year_),
+        data = cap_05_09_std_pca_pat_delta, family = poisson)
+
+tbl_regression(mod_n_young_L_change, intercept = TRUE)
+ggeffect(mod_n_young_L_change) %>% plot()
+
+mod_n_young_res_change <-
+  glmer(N_young ~ mod_res_rate + (1 | year_),
+        data = cap_05_09_std_pca_pat_delta, family = poisson)
+
+tbl_regression(mod_n_young_res_change, intercept = TRUE)
+ggeffect(mod_n_young_res_change) %>% plot()
+```
+
+Is body size associated with polygyny? No
+```{r}
+mod_n_females_wing <-
+  glmer(N_females ~ wing + (1 | year_),
+        data = cap_05_09_std_pca_pat_delta, family = poisson)
+
+tbl_regression(mod_n_females_wing, intercept = TRUE)
+ggeffect(mod_n_females_wing) %>% plot()
+
+mod_n_females_PC1 <-
+  glmer(N_females ~ structure_pc1 + (1 | year_),
+        data = cap_05_09_std_pca_pat_delta, family = poisson)
+
+tbl_regression(mod_n_females_PC1, intercept = TRUE)
+ggeffect(mod_n_females_PC1) %>% plot()
+
+mod_n_females_tarsus <-
+  glmer(N_females ~ tarsus + (1 | year_),
+        data = cap_05_09_std_pca_pat_delta, family = poisson)
+
+tbl_regression(mod_n_females_tarsus, intercept = TRUE)
+ggeffect(mod_n_females_tarsus) %>% plot()
+```
+
+Is body size associated with paternity? Maybe
+weak relationship (p = 0.06): larger-sized males tend to sire more offspring
+```{r}
+mod_n_young_wing <-
+  glmer(N_young ~ wing + (1 | year_),
+        data = cap_05_09_std_pca_pat_delta, family = poisson)
+
+tbl_regression(mod_n_young_wing, intercept = TRUE)
+ggeffect(mod_n_young_wing) %>% plot()
+
+mod_n_young_PC1 <-
+  glmer(N_young ~ structure_pc1 + (1 | year_),
+        data = cap_05_09_std_pca_pat_delta, family = poisson)
+
+tbl_regression(mod_n_young_PC1, intercept = TRUE)
+ggeffect(mod_n_young_PC1) %>% plot()
+
+mod_n_young_tarsus <-
+  glmer(N_young ~ tarsus + (1 | year_),
+        data = cap_05_09_std_pca_pat_delta, family = poisson)
+
+tbl_regression(mod_n_young_tarsus, intercept = TRUE)
+ggeffect(mod_n_young_tarsus) %>% plot()
+```
+
+Is body weight associated with polygyny?
+```{r}
+mod_n_females_weight <-
+  glmer(N_females ~ weight + (1 | year_),
+        data = cap_05_09_std_pca_pat_delta, family = poisson)
+tbl_regression(mod_n_females_weight, intercept = TRUE)
+ggeffect(mod_n_females_weight) %>% plot()
+```
+
+Is body weight associated with paternity? Yes
+strong relationship between initial weight and the number of young sired (p < 0.001)
+also, a strong relationship between residual index and paternity (p < 0.001)
+```{r}
+mod_n_young_weight <-
+  glmer(N_young ~ weight + (1 | year_),
+        data = cap_05_09_std_pca_pat_delta, family = poisson)
+tbl_regression(mod_n_young_weight, intercept = TRUE)
+ggeffect(mod_n_young_weight) %>% plot()
+
+mod_n_young_res <-
+  glmer(N_young ~ mod_res + (1 | year_),
+        data = cap_05_09_std_pca_pat_delta, family = poisson)
+tbl_regression(mod_n_young_res, intercept = TRUE)
+ggeffect(mod_n_young_res) %>% plot()
+```
 
 ## EDA on body mass
 ```{r}
@@ -1132,6 +1560,7 @@ last_d_dist_plot + plot_spacer() + last_d_weight_plot + weight_dist_plot +
 ## Paternity
 
 ### Paternity and body mass
+
 Subset of males that sired at least one young
 
 ```{r}
@@ -1153,8 +1582,8 @@ Subset of males that sired at least one young
 ```
 
 ### Paternity and body mass
-All males
 
+All males
 
 ```{r}
 #using first capture
@@ -1178,11 +1607,7 @@ All males
 
 ```
 
-
-
-
 ### Paternity and tenure
-
 
 ```{r}
 # x <- merge(cap, pat, by = c("ID", "year_"), all.x = TRUE)
@@ -1207,9 +1632,7 @@ All males
 
 ```
 
-
 ### Paternity, tenure and body mass
-
 
 ```{r}
 # x <- merge(cap, pat, by = c("ID", "year_"), all.x = TRUE)

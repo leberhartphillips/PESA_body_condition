@@ -60,6 +60,8 @@ pat <-
              N_young = as.integer(N_young)) %>% 
       ungroup()
   })
+# save(pat,
+#      file = "R/DAT/pat.rds")
 
 # query scidb for tenure data
 # ten <- 

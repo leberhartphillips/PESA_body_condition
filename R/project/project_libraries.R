@@ -20,7 +20,12 @@ packages_required_in_project <-
     "gt",
     "RColorBrewer",
     "patchwork",
-    "multcomp"
+    "multcomp",
+    "glmmTMB",
+    "gtsummary",
+    "smatr",
+    "geiger",
+    "ggeffects"
   )
 
 # of the required packages, check if some need to be installed

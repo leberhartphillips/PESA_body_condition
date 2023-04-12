@@ -50,7 +50,8 @@ cap_all %>%
 # standardize capture date according to the year
 cap_05_09_std <- 
   cap_05_09 %>% 
-  filter(n_by_id > 1, !is.na(weight)) %>% 
+  filter(n_by_id > 1, !is.na(weight)) %>%
+  # filter(!is.na(weight)) %>% 
   mutate(capture_id = paste(ID, year_, sep = "_")) %>% 
   dplyr::select(-capdt, -ID) %>% 
   mutate(gpsdt_year_start = ymd_hms(paste0(year(gpsdt), "-01-01 00:00:00"))) %>% 
@@ -219,13 +220,8 @@ R2c_mod_weight <-
 #          nboot = 1000,
 #          CI = 0.95,
 #          max_level = 1)
-mod_weight = mod_weight_wing
-tidy_mod_weight = tidy_mod_weight_wing
-rpt_mod_weight = rpt_mod_weight_wing
-R2m_mod_weight = R2m_mod_weight_wing
-R2c_mod_weight = R2c_mod_weight_wing
 
-stats_mod_weight <- 
+stats_mod_weight <-
   list(mod = mod_weight,
        tidy = tidy_mod_weight,
        rptR = rpt_mod_weight,
@@ -243,6 +239,8 @@ stats_mod_weight <-
 #      file = "R/output/stats_mod_weight.rds")
 # save(stats_mod_weight_wing2,
 #      file = "R/output/stats_mod_weight_wing2.rds")
+# save(stats_mod_weight_all_caps,
+#      file = "R/output/stats_mod_weight_all_caps.rds")
 
 load("R/output/stats_mod_weight.rds")
 

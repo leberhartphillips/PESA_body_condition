@@ -1,0 +1,100 @@
+---
+title: "junk"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+## Scaled mass index:
+
+To quantify the birds' body mass relative to their body size, we calculate the scaled mass index following Peig and Green, 2009, Peig and Green, 2010. This index adjusts the mass of all individuals to that which they would have if they had the same body size, using the equation of the linear regression of log-mass on log-wing-length estimated by type-2 SMA regression.
+
+Several condition indices (CIs) have been proposed in the literature, such as simple ratios between body mass ($M$) and body size ($L$) measures (e.g., $M/L$, ${M/L}^2$ ("$BMI$"; Quételet's index), or ${M/L}^3$ ("$L$"; Fulton's index)) which are popular in the health sciences, or the Residual index ($R_i$) which uses the residuals from an OLS regression of M against one or more length measurements, usually after log transformation. A widely used method involves performing an analysis of covariance (ANCOVA), which integrates elements of linear regression and ANOVA to directly evaluate the impact of a treatment on M while accounting for the influence of a related variable, identified as $L$.
+
+Peig & Green (2009) presented a novel CI method called the Scaled mass index $\hat{M}_i$, which standardizes body mass at a fixed value of a linear body measurement based on the scaling relationship between mass and length, according to equation 1:
+
+$$
+\hat{M} = M_i[ \,\frac{L_0}{L_i}] \,^{\beta_{SMA}}
+$$
+
+where $M_i$ and $L_i$ are the body mass and linear body measurement of individual $i$ respectively; $\beta_{SMA}$ is the scaling exponent estimated by the standardized major axis (SMA) regression of $lnM$ on $lnL$; $L_0$ is an arbitrary value of $L$ (e.g. the arithmetic mean value for the study population); and inline image is the predicted body mass for individual $i$ when the linear body measure is standardized to $L_0$.
+
+SMA regression differs from traditional regression methods like OLR regression in that it assumes that both variables have errors or variation associated with them, rather than just the Y variable. This means that SMA regression is more appropriate when both variables are measured with some level of error.
+
+SMA regression involves finding the slope of the line that best fits the data points by minimizing the perpendicular distance between the line and the data points. This line is called the major axis, and its slope is called the standardized major axis slope.
+
+The standardized major axis slope is a ratio of the Y-axis standard deviation to the X-axis standard deviation. This means that it represents the change in Y per unit of X, relative to the variability in both variables.
+
+SMA regression is useful when comparing two variables that are measured with different units or have different measurement scales, as it allows for direct comparison of the slopes between the variables. It is commonly used in ecology, biology, and other fields to analyze the relationship between variables such as body size and metabolic rate, or species diversity and environmental variables.
+
+Here, we calculate the scaled mass index according to the formula above proposed by Peig & Green (2009). First we take the full capture dataset (i.e., across all years) and we subset it to include only one observation per individual (i.e., to make the dataset independent). For repeated measures, we take the first measurement to attempt to account for seasonal changes in body mass. Based on the PCA above, we concluded that the wing measurement was the most parsimonious structural variable associated with body mass, so use this in our SMA regression with body mass. Here we can see that wing is highly correlated to body mass (R = 0.42), yet when we scale the mass, the index is no longer 
+
+```{r}
+SMA_data_prep <- 
+  cap_05_09_std_pca %>% 
+  group_by(capture_id) %>% 
+  arrange(capture_id, gpsdt) %>% 
+  slice(1) %>% 
+  ungroup() %>% 
+  na.omit() %>%
+  select(capture_id, year_, gpsdt, weight, wing, log_weight, log_wing)
+
+cor.test(SMA_data_prep$log_weight, SMA_data_prep$log_wing)
+```
+
+but when we convert the body mass to the scaled mass index, we break the correlation so that it no longer exists:
+
+```{r}
+weight_wing_sma_slope <- coef(sma(SMA_data_prep$log_weight ~ SMA_data_prep$log_wing))[2]
+avg_wing <- mean(SMA_data_prep$wing)
+
+mod <- lmer(log_weight ~ log_wing + (1 | capture_id), data = cap_05_09_std_pca)
+summary(glht(mod))
+plot(allEffects(mod))
+
+nrow(cap_05_09_std_pca_smi)
+length(residuals(mod))
+
+res_df <- 
+  data.frame(capture_id = cap_05_09_std_pca$capture_id, 
+             gpsdt = cap_05_09_std_pca$gpsdt,
+             mod_res = residuals(mod))
+
+cap_05_09_std_pca_smi <-
+  cap_05_09_std_pca %>% 
+  ungroup() %>% 
+  mutate(smi = weight * (avg_wing/wing)^weight_wing_sma_slope,
+         M_L = weight/wing,
+         bmi = weight/wing^2,
+         L = weight/wing^3) %>% 
+  left_join(., res_df, by = c("capture_id", "gpsdt"), multiple = "all") %>%
+  distinct()
+
+cap_05_09_std_pca_smi %>% 
+  group_by(capture_id) %>% 
+  arrange(capture_id, gpsdt) %>% 
+  slice(1) %>% 
+  ungroup() %>% 
+  na.omit() %>% 
+  dplyr::select(weight, culmen, totalHead, tarsus,  wing, structure_pc1, smi, bmi, L, mod_res) %>% 
+  cor() %>% 
+  corrplot(type = "upper", method = "circle", tl.srt = 45, addCoef.col = 'black')
+
+cor.test(cap_05_09_std_pca_smi$weight, cap_05_09_std_pca_smi$wing)
+cor.test(cap_05_09_std_pca_smi$smi, cap_05_09_std_pca_smi$wing)
+cor.test(cap_05_09_std_pca_smi$bmi, cap_05_09_std_pca_smi$wing)
+cor.test(cap_05_09_std_pca_smi$L, cap_05_09_std_pca_smi$wing)
+cor.test(cap_05_09_std_pca_smi$mod_res, cap_05_09_std_pca_smi$wing)
+```
+
+
+```{r}
+mod_weight_res <-
+  lmer(mod_res ~ date_deviance + first_date + last_date +
+         (1 | capture_id),
+       data = cap_05_09_std_pca_smi)
+
+summary(glht(mod_weight_res))
+plot(allEffects(mod_weight_res))
+```
