@@ -98,3 +98,1412 @@ mod_weight_res <-
 summary(glht(mod_weight_res))
 plot(allEffects(mod_weight_res))
 ```
+
+
+Next we will attempt to model how body mass and size are related to polygyny and paternity. To do so, need to decouple the body mass measures from structural size by calculating an index that adjusts the mass of all individuals to a value they would have if they all had the same body size (i.e., to directly compare the relative mass dynamics among males). Several indicies have been proposed in the literature, such as simple ratios between body mass ($M$) and body size ($L$) measures (e.g., $M/L$, ${M/L}^2$ ("$BMI$"; Quételet's index), or ${M/L}^3$ ("$L$"; Fulton's index)) which are popular in the health sciences, the Residual index ($R_i$) which uses the residuals from an OLS regression of M against one or more length measurements, usually after log transformation, or the scaled mass index ($\hat{M}_i$), which standardizes body mass at a fixed value of a linear body measurement based on the scaling relationship between mass and length:
+
+$$
+\hat{M_i} = M_i[ \,\frac{L_0}{L_i}] \,^{\beta_{SMA}}
+$$
+
+where $M_i$ and $L_i$ are the body mass and linear body measurement of individual $i$ respectively; $\beta_{SMA}$ is the scaling exponent estimated by the standardized major axis (SMA) regression of $lnM$ on $lnL$; $L_0$ is an arbitrary value of $L$ (e.g. the arithmetic mean value for the study population); and $\hat{M}_i$ is the predicted body mass for individual $i$ when the linear body measure is standardized to $L_0$.
+
+Here we calculate the different indicies proposed in the literature and assess the best one to use for our study on PESAs. Based on the PCA above, we concluded that the wing measurement was the most parsimonious structural variable associated with body mass, so the best index will be reflected in its lack of correlation with wing (i.e., to decouple body mass from structural size). 
+
+First we extract all the first measures of males across the dataset. The raw correlation of wing and body mass is $r^2$ = 0.42.
+
+```{r}
+SMA_data_prep <- 
+  cap_05_09_std_pca %>% 
+  group_by(capture_id) %>% 
+  arrange(capture_id, gpsdt) %>% 
+  slice(1) %>% 
+  ungroup() %>% 
+  na.omit() %>%
+  select(capture_id, year_, gpsdt, weight, wing, log_weight, log_wing)
+
+cor.test(SMA_data_prep$log_weight, SMA_data_prep$log_wing)
+```
+
+then we calculate the various indices proposed in the literature:
+```{r}
+# scaled mass index constants
+weight_wing_sma_slope <- coef(sma(SMA_data_prep$log_weight ~ SMA_data_prep$log_wing))[2]
+avg_wing <- mean(SMA_data_prep$wing)
+
+# residual index preparation
+mod <- lmer(weight ~ wing + (1 | capture_id), data = cap_05_09_std_pca)
+
+ggplot(data.frame(resid = residuals(mod), fitted = fitted(mod)), aes(x = fitted, y = resid)) +
+  geom_point() +
+  labs(x = "Fitted Values", y = "Residuals") +
+  ggtitle("Residuals vs Fitted Values")
+
+summary(glht(mod))
+plot(allEffects(mod))
+
+# check that the row number is the same (for sanity!)
+nrow(cap_05_09_std_pca_smi)
+length(residuals(mod))
+
+# make a dataframe of the residuals and the unique capture events
+res_df <- 
+  data.frame(capture_id = cap_05_09_std_pca$capture_id, 
+             gpsdt = cap_05_09_std_pca$gpsdt,
+             mod_res = residuals(mod))
+
+# calculate the different indices 
+cap_05_09_std_pca_smi <-
+  cap_05_09_std_pca %>% 
+  ungroup() %>% 
+  mutate(smi = weight * (avg_wing/wing)^weight_wing_sma_slope,
+         M_L = weight/wing,
+         bmi = weight/wing^2,
+         L = weight/wing^3) %>% 
+  left_join(., res_df, by = c("capture_id", "gpsdt"), multiple = "all") %>%
+  distinct()
+
+# evaluate the correlations between the different indices and wing
+cap_05_09_std_pca_smi %>% 
+  group_by(capture_id) %>% 
+  arrange(capture_id, gpsdt) %>% 
+  slice(1) %>% 
+  ungroup() %>% 
+  na.omit() %>% 
+  dplyr::select(weight, culmen, totalHead, tarsus,  wing, structure_pc1, smi, bmi, L, mod_res) %>% 
+  cor() %>% 
+  corrplot(type = "upper", method = "circle", tl.srt = 45, addCoef.col = 'black')
+
+cor.test(cap_05_09_std_pca_smi$weight, cap_05_09_std_pca_smi$wing)
+cor.test(cap_05_09_std_pca_smi$smi, cap_05_09_std_pca_smi$wing)
+cor.test(cap_05_09_std_pca_smi$bmi, cap_05_09_std_pca_smi$wing)
+cor.test(cap_05_09_std_pca_smi$L, cap_05_09_std_pca_smi$wing)
+cor.test(cap_05_09_std_pca_smi$mod_res, cap_05_09_std_pca_smi$wing)
+```
+
+Next we need to transform our repeated measures of the body index to a rate of change (e.g., $\Delta index^{-t}$), which is essentially calculating the difference between the first and last measure and dividing it by the time difference between the two measures. We will also need to bind the paternity data to the dataframe. We are left with a single row per male that allows for models assessing how the change in body condition is associated with polygyny and paternity.
+
+-   do heavier males acquire more offspring/females?
+-   do earlier arriving males acquire more offspring/females?
+-   is body mass change linked to paternity or females acquired?
+
+```{r}
+cap_05_09_std_pca_pat_delta <- 
+  pat %>%
+  mutate(capture_id = paste(IDfather, year_, sep = "_")) %>% 
+  select(-c(IDfather, year_)) %>% 
+  left_join(cap_05_09_std_pca_smi, ., by = "capture_id", multiple = "all") %>%
+  # left_join(cap_05_09_std_pca, ., by = "capture_id", multiple = "all") %>% 
+  na.omit() %>% 
+  group_by(capture_id) %>% 
+  slice(1, n()) %>% 
+  mutate(delta_weight = weight - lag(weight),
+         delta_bmi = bmi - lag(bmi),
+         delta_M_L = M_L - lag(M_L),
+         delta_L = L - lag(L),
+         delta_mod_res = mod_res - lag(mod_res)) %>% 
+  mutate(mass_rate = delta_weight/date_deviance,
+         BMI_rate = delta_bmi/date_deviance,
+         M_L_rate = delta_M_L/date_deviance,
+         L_rate = delta_L/date_deviance,
+         mod_res_rate = delta_mod_res - lag(mod_res)) %>% 
+  # select(-c(gpsdt, n_by_id, culmen, totalHead, tarsus, structure_pc1, log_weight, log_wing)) %>% 
+  na.omit()
+
+
+
+cor.test(cap_05_09_std_pca_pat_delta$delta_weight, cap_05_09_std_pca_pat_delta$delta_mod_res)
+plot(cap_05_09_std_pca_pat_delta$delta_weight, cap_05_09_std_pca_pat_delta$delta_mod_res)
+cor.test(cap_05_09_std_pca_pat_delta$mass_rate, cap_05_09_std_pca_pat_delta$mod_res_rate)
+plot(cap_05_09_std_pca_pat_delta$mass_rate, cap_05_09_std_pca_pat_delta$mod_res_rate)
+plot(cap_05_09_std_pca_pat_delta$date_deviance, cap_05_09_std_pca_pat_delta$mass_rate)
+plot(cap_05_09_std_pca_pat_delta$date_deviance, cap_05_09_std_pca_pat_delta$mod_res_rate)
+
+hist(cap_05_09_std_pca_pat_delta$BMI_change)
+```
+
+check funnel plot of mass rate. Looks like birds that are measured close in time have more dramatic body mass fluctuations than those measured later
+```{r}
+mass_rate_date_deviance_plot <-
+  cap_05_09_std_pca_pat_delta %>% 
+  ungroup() %>% 
+  ggplot() +
+  geom_point(aes(x = date_deviance, y = mass_rate),
+             alpha = 0.4,
+             shape = 19,
+             color = brewer.pal(8, "Set1")[c(2)]) +
+  luke_theme +
+  theme(panel.border = element_blank(),
+        plot.margin = margin(0, 0, 0.5, 0.5, "cm"),
+        axis.title.y = element_text(vjust = 5)) +
+  scale_y_continuous(limits = c(min(cap_05_09_std_pca_pat_delta$mass_rate, na.rm = TRUE), 
+                                max(cap_05_09_std_pca_pat_delta$mass_rate, na.rm = TRUE) * 1.05)) +
+  ylab("rate of body mass change (g per day)") +
+  xlab("time between measures (days)")
+
+date_deviance_dist_plot <-
+  cap_05_09_std_pca_pat_delta %>% 
+  ungroup() %>% 
+  na.omit() %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = date_deviance, y = 16), 
+               fill = brewer.pal(8, "Set1")[c(2)], 
+               color = brewer.pal(8, "Set1")[c(2)],
+               width = 1, alpha = 0.5) +
+  geom_jitter(aes(x = date_deviance, y = 13), 
+              fill = brewer.pal(8, "Set1")[c(2)], 
+              color = brewer.pal(8, "Set1")[c(2)],
+              height = 0.5, alpha = 0.5) +
+  geom_histogram(alpha = 0.5, aes(date_deviance), 
+                 fill = brewer.pal(8, "Set1")[c(2)], 
+                 binwidth = 1) +
+  luke_theme +
+  theme(axis.title.y = element_text(hjust = 0.1),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        panel.border = element_blank(),
+        plot.margin = margin(0, 0, 0, 0.5, "cm")) +
+  ylab(expression(italic(N)[males])) +
+  scale_y_continuous(limits = c(0, 17),
+                     breaks = c(0, 5, 10), position = "left") +
+  scale_x_continuous(limits = c(min(cap_05_09_std_pca$date_deviance, na.rm = TRUE), 
+                                max(cap_05_09_std_pca$date_deviance, na.rm = TRUE) * 1.05))
+
+mass_rate_dist_plot <-
+  cap_05_09_std_pca_pat_delta %>% 
+  ungroup() %>% 
+  na.omit() %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = mass_rate, y = 16), 
+               fill = brewer.pal(8, "Set1")[c(2)], 
+               color = brewer.pal(8, "Set1")[c(2)],
+               width = 1, alpha = 0.5) +
+  geom_jitter(aes(x = mass_rate, y = 13), 
+              fill = brewer.pal(8, "Set1")[c(2)], 
+              color = brewer.pal(8, "Set1")[c(2)],
+              height = 0.5, alpha = 0.5) +
+  geom_histogram(alpha = 0.5, aes(mass_rate), 
+                 fill = brewer.pal(8, "Set1")[c(2)], 
+                 binwidth = 0.25) +
+  luke_theme +
+  theme(axis.title.x = element_text(hjust = 0.1),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.border = element_blank(),
+        plot.margin = margin(0, 0, 0, 0.5, "cm")) +
+  ylab(expression(italic(N)[males])) +
+  scale_x_continuous(limits = c(min(cap_05_09_std_pca_pat_delta$mass_rate, na.rm = TRUE), 
+                                max(cap_05_09_std_pca_pat_delta$mass_rate, na.rm = TRUE) * 1.05)) +
+  scale_y_continuous(limits = c(0, 17),
+                     breaks = c(0, 5, 10), position = "left") +
+  coord_flip()
+
+date_deviance_dist_plot + plot_spacer() + mass_rate_date_deviance_plot + mass_rate_dist_plot + 
+  plot_layout(ncol = 2,
+              heights = unit(c(2, 8), 'cm'),
+              widths = unit(c(8, 2), 'cm'))
+```
+
+model it
+```{r}
+mass_rate_abs <- 
+  cap_05_09_std_pca_pat_delta %>% 
+  select(year_, capture_id, mass_rate, date_deviance) %>% 
+  mutate(abs_mass_rate = abs(mass_rate))
+
+mod_mass_rate_bmi <- 
+  lmer(log(abs_mass_rate + 1) ~ date_deviance + (1 | year_),
+        data = mass_rate_abs)
+
+tbl_regression(mod_mass_rate_bmi, intercept = TRUE)
+# ggeffect(mod_n_young_mass_change) %>% plot()
+
+mod_mass_rate_bmi_fits <- 
+  as.data.frame(effect(term = "date_deviance", mod = mod_mass_rate_bmi, 
+                       xlevels = list(date_deviance = seq(min(mass_rate_abs[, "date_deviance"], na.rm = TRUE),
+                                                      max(mass_rate_abs[, "date_deviance"], na.rm = TRUE), 0.5))))
+
+date_deviance_mass_rate_plot <-
+  mass_rate_abs %>% 
+  ungroup() %>% 
+  ggplot() +
+  geom_point(aes(y = log(abs_mass_rate + 1), x = date_deviance),
+             alpha = 0.4,
+             shape = 19,
+             color = brewer.pal(8, "Set1")[c(2)]) +
+  geom_line(data = mod_mass_rate_bmi_fits,
+            aes(x = date_deviance, y = fit),
+            lwd = 1,
+            color = brewer.pal(8, "Set1")[c(2)]) +
+  geom_ribbon(data = mod_mass_rate_bmi_fits, 
+              aes(x = date_deviance, ymax = upper, ymin = lower),
+              lwd = 1, alpha = 0.25) +
+  luke_theme +
+  theme(panel.border = element_blank(),
+        plot.margin = margin(0, 0, 0.5, 0.5, "cm"),
+        axis.title.y = element_text(vjust = 5)) +
+  scale_y_continuous(limits = c(log(min(mass_rate_abs$abs_mass_rate, na.rm = TRUE) + 1), 
+                                log(max(mass_rate_abs$abs_mass_rate, na.rm = TRUE) + 1) * 1.05)) +
+  xlab("time between measurements (days)") +
+  ylab("absolute rate of body mass change (g per day)")
+
+wing_dist_plot <-
+  cap_05_09_std_pca_pat_delta %>% 
+  ungroup() %>% 
+  na.omit() %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = wing, y = 16), 
+               fill = brewer.pal(8, "Set1")[c(2)], 
+               color = brewer.pal(8, "Set1")[c(2)],
+               width = 1, alpha = 0.5) +
+  geom_jitter(aes(x = wing, y = 13), 
+              fill = brewer.pal(8, "Set1")[c(2)], 
+              color = brewer.pal(8, "Set1")[c(2)],
+              height = 0.5, alpha = 0.5) +
+  geom_histogram(alpha = 0.5, aes(wing), 
+                 fill = brewer.pal(8, "Set1")[c(2)], 
+                 binwidth = 1) +
+  luke_theme +
+  theme(axis.title.y = element_text(hjust = 0.1),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        panel.border = element_blank(),
+        plot.margin = margin(0, 0, 0, 0.5, "cm")) +
+  ylab(expression(italic(N)[males])) +
+  scale_y_continuous(limits = c(0, 17),
+                     breaks = c(0, 5, 10), position = "left")
+
+n_young_dist_plot <-
+  cap_05_09_std_pca_pat_delta %>% 
+  ungroup() %>% 
+  na.omit() %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = N_young, y = 16), 
+               fill = brewer.pal(8, "Set1")[c(2)], 
+               color = brewer.pal(8, "Set1")[c(2)],
+               width = 1, alpha = 0.5) +
+  geom_jitter(aes(x = N_young, y = 13), 
+              fill = brewer.pal(8, "Set1")[c(2)], 
+              color = brewer.pal(8, "Set1")[c(2)],
+              height = 0.5, alpha = 0.5) +
+  geom_histogram(alpha = 0.5, aes(N_young), 
+                 fill = brewer.pal(8, "Set1")[c(2)], 
+                 binwidth = 2) +
+  luke_theme +
+  theme(axis.title.x = element_text(hjust = 0.1),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.border = element_blank(),
+        plot.margin = margin(0, 0, 0, 0.5, "cm")) +
+  ylab(expression(italic(N)[males])) +
+  scale_y_continuous(limits = c(0, 17),
+                     breaks = c(0, 5, 10), position = "left") +
+  coord_flip()
+
+wing_dist_plot + plot_spacer() + wing_N_young_plot + n_young_dist_plot + 
+  plot_layout(ncol = 2,
+              heights = unit(c(2, 8), 'cm'),
+              widths = unit(c(8, 2), 'cm'))
+
+```
+
+Next we need to transform our repeated measures of body index to a rate of change (e.g., $\Delta index^{-t}$), which is essentially calculating the difference between the first and last measure and dividing it by the time difference between the two measures. We will also need to bind the paternity data to the dataframe. We are left with a single row per male that allows for models assessing how the change in body condition is associated with polygyny and paternity.
+
+-   do heavier males acquire more offspring/females?
+-   do earlier arriving males acquire more offspring/females?
+-   is body mass change linked to paternity or females acquired?
+
+```{r}
+cap_05_09_std_pca_pat_delta <- 
+  pat %>%
+  mutate(capture_id = paste(IDfather, year_, sep = "_")) %>% 
+  select(-c(IDfather, year_)) %>% 
+  left_join(cap_05_09_std_pca_smi, ., by = "capture_id", multiple = "all") %>%
+  # left_join(cap_05_09_std_pca, ., by = "capture_id", multiple = "all") %>% 
+  na.omit() %>% 
+  group_by(capture_id) %>% 
+  slice(1, n()) %>% 
+  mutate(delta_weight = weight - lag(weight),
+         delta_bmi = bmi - lag(bmi),
+         delta_M_L = M_L - lag(M_L),
+         delta_L = L - lag(L),
+         delta_mod_res = mod_res - lag(mod_res)) %>% 
+  mutate(mass_rate = delta_weight/date_deviance,
+         BMI_rate = delta_bmi/date_deviance,
+         M_L_rate = delta_M_L/date_deviance,
+         L_rate = delta_L/date_deviance,
+         mod_res_rate = delta_mod_res - lag(mod_res)) %>% 
+  # select(-c(gpsdt, n_by_id, culmen, totalHead, tarsus, structure_pc1, log_weight, log_wing)) %>% 
+  na.omit()
+
+
+
+cor.test(cap_05_09_std_pca_pat_delta$delta_weight, cap_05_09_std_pca_pat_delta$delta_mod_res)
+plot(cap_05_09_std_pca_pat_delta$delta_weight, cap_05_09_std_pca_pat_delta$delta_mod_res)
+cor.test(cap_05_09_std_pca_pat_delta$mass_rate, cap_05_09_std_pca_pat_delta$mod_res_rate)
+plot(cap_05_09_std_pca_pat_delta$mass_rate, cap_05_09_std_pca_pat_delta$mod_res_rate)
+plot(cap_05_09_std_pca_pat_delta$date_deviance, cap_05_09_std_pca_pat_delta$mass_rate)
+plot(cap_05_09_std_pca_pat_delta$date_deviance, cap_05_09_std_pca_pat_delta$mod_res_rate)
+
+hist(cap_05_09_std_pca_pat_delta$BMI_change)
+```
+
+check funnel plot of mass rate. Looks like birds that are measured close in time have more dramatic body mass fluctuations than those measured later
+```{r}
+mass_rate_date_deviance_plot <-
+  cap_05_09_std_pca_pat_delta %>% 
+  ungroup() %>% 
+  ggplot() +
+  geom_point(aes(x = date_deviance, y = mass_rate),
+             alpha = 0.4,
+             shape = 19,
+             color = brewer.pal(8, "Set1")[c(2)]) +
+  luke_theme +
+  theme(panel.border = element_blank(),
+        plot.margin = margin(0, 0, 0.5, 0.5, "cm"),
+        axis.title.y = element_text(vjust = 5)) +
+  scale_y_continuous(limits = c(min(cap_05_09_std_pca_pat_delta$mass_rate, na.rm = TRUE), 
+                                max(cap_05_09_std_pca_pat_delta$mass_rate, na.rm = TRUE) * 1.05)) +
+  ylab("rate of body mass change (g per day)") +
+  xlab("time between measures (days)")
+
+date_deviance_dist_plot <-
+  cap_05_09_std_pca_pat_delta %>% 
+  ungroup() %>% 
+  na.omit() %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = date_deviance, y = 16), 
+               fill = brewer.pal(8, "Set1")[c(2)], 
+               color = brewer.pal(8, "Set1")[c(2)],
+               width = 1, alpha = 0.5) +
+  geom_jitter(aes(x = date_deviance, y = 13), 
+              fill = brewer.pal(8, "Set1")[c(2)], 
+              color = brewer.pal(8, "Set1")[c(2)],
+              height = 0.5, alpha = 0.5) +
+  geom_histogram(alpha = 0.5, aes(date_deviance), 
+                 fill = brewer.pal(8, "Set1")[c(2)], 
+                 binwidth = 1) +
+  luke_theme +
+  theme(axis.title.y = element_text(hjust = 0.1),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        panel.border = element_blank(),
+        plot.margin = margin(0, 0, 0, 0.5, "cm")) +
+  ylab(expression(italic(N)[males])) +
+  scale_y_continuous(limits = c(0, 17),
+                     breaks = c(0, 5, 10), position = "left") +
+  scale_x_continuous(limits = c(min(cap_05_09_std_pca$date_deviance, na.rm = TRUE), 
+                                max(cap_05_09_std_pca$date_deviance, na.rm = TRUE) * 1.05))
+
+mass_rate_dist_plot <-
+  cap_05_09_std_pca_pat_delta %>% 
+  ungroup() %>% 
+  na.omit() %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = mass_rate, y = 16), 
+               fill = brewer.pal(8, "Set1")[c(2)], 
+               color = brewer.pal(8, "Set1")[c(2)],
+               width = 1, alpha = 0.5) +
+  geom_jitter(aes(x = mass_rate, y = 13), 
+              fill = brewer.pal(8, "Set1")[c(2)], 
+              color = brewer.pal(8, "Set1")[c(2)],
+              height = 0.5, alpha = 0.5) +
+  geom_histogram(alpha = 0.5, aes(mass_rate), 
+                 fill = brewer.pal(8, "Set1")[c(2)], 
+                 binwidth = 0.25) +
+  luke_theme +
+  theme(axis.title.x = element_text(hjust = 0.1),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.border = element_blank(),
+        plot.margin = margin(0, 0, 0, 0.5, "cm")) +
+  ylab(expression(italic(N)[males])) +
+  scale_x_continuous(limits = c(min(cap_05_09_std_pca_pat_delta$mass_rate, na.rm = TRUE), 
+                                max(cap_05_09_std_pca_pat_delta$mass_rate, na.rm = TRUE) * 1.05)) +
+  scale_y_continuous(limits = c(0, 17),
+                     breaks = c(0, 5, 10), position = "left") +
+  coord_flip()
+
+date_deviance_dist_plot + plot_spacer() + mass_rate_date_deviance_plot + mass_rate_dist_plot + 
+  plot_layout(ncol = 2,
+              heights = unit(c(2, 8), 'cm'),
+              widths = unit(c(8, 2), 'cm'))
+```
+
+model it
+```{r}
+mass_rate_abs <- 
+  cap_05_09_std_pca_pat_delta %>% 
+  select(year_, capture_id, mass_rate, date_deviance) %>% 
+  mutate(abs_mass_rate = abs(mass_rate))
+
+mod_mass_rate_bmi <- 
+  lmer(log(abs_mass_rate + 1) ~ date_deviance + (1 | year_),
+        data = mass_rate_abs)
+
+tbl_regression(mod_mass_rate_bmi, intercept = TRUE)
+# ggeffect(mod_n_young_mass_change) %>% plot()
+
+mod_mass_rate_bmi_fits <- 
+  as.data.frame(effect(term = "date_deviance", mod = mod_mass_rate_bmi, 
+                       xlevels = list(date_deviance = seq(min(mass_rate_abs[, "date_deviance"], na.rm = TRUE),
+                                                      max(mass_rate_abs[, "date_deviance"], na.rm = TRUE), 0.5))))
+
+date_deviance_mass_rate_plot <-
+  mass_rate_abs %>% 
+  ungroup() %>% 
+  ggplot() +
+  geom_point(aes(y = log(abs_mass_rate + 1), x = date_deviance),
+             alpha = 0.4,
+             shape = 19,
+             color = brewer.pal(8, "Set1")[c(2)]) +
+  geom_line(data = mod_mass_rate_bmi_fits,
+            aes(x = date_deviance, y = fit),
+            lwd = 1,
+            color = brewer.pal(8, "Set1")[c(2)]) +
+  geom_ribbon(data = mod_mass_rate_bmi_fits, 
+              aes(x = date_deviance, ymax = upper, ymin = lower),
+              lwd = 1, alpha = 0.25) +
+  luke_theme +
+  theme(panel.border = element_blank(),
+        plot.margin = margin(0, 0, 0.5, 0.5, "cm"),
+        axis.title.y = element_text(vjust = 5)) +
+  scale_y_continuous(limits = c(log(min(mass_rate_abs$abs_mass_rate, na.rm = TRUE) + 1), 
+                                log(max(mass_rate_abs$abs_mass_rate, na.rm = TRUE) + 1) * 1.05)) +
+  xlab("time between measurements (days)") +
+  ylab("absolute rate of body mass change (g per day)")
+
+wing_dist_plot <-
+  cap_05_09_std_pca_pat_delta %>% 
+  ungroup() %>% 
+  na.omit() %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = wing, y = 16), 
+               fill = brewer.pal(8, "Set1")[c(2)], 
+               color = brewer.pal(8, "Set1")[c(2)],
+               width = 1, alpha = 0.5) +
+  geom_jitter(aes(x = wing, y = 13), 
+              fill = brewer.pal(8, "Set1")[c(2)], 
+              color = brewer.pal(8, "Set1")[c(2)],
+              height = 0.5, alpha = 0.5) +
+  geom_histogram(alpha = 0.5, aes(wing), 
+                 fill = brewer.pal(8, "Set1")[c(2)], 
+                 binwidth = 1) +
+  luke_theme +
+  theme(axis.title.y = element_text(hjust = 0.1),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        panel.border = element_blank(),
+        plot.margin = margin(0, 0, 0, 0.5, "cm")) +
+  ylab(expression(italic(N)[males])) +
+  scale_y_continuous(limits = c(0, 17),
+                     breaks = c(0, 5, 10), position = "left")
+
+n_young_dist_plot <-
+  cap_05_09_std_pca_pat_delta %>% 
+  ungroup() %>% 
+  na.omit() %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = N_young, y = 16), 
+               fill = brewer.pal(8, "Set1")[c(2)], 
+               color = brewer.pal(8, "Set1")[c(2)],
+               width = 1, alpha = 0.5) +
+  geom_jitter(aes(x = N_young, y = 13), 
+              fill = brewer.pal(8, "Set1")[c(2)], 
+              color = brewer.pal(8, "Set1")[c(2)],
+              height = 0.5, alpha = 0.5) +
+  geom_histogram(alpha = 0.5, aes(N_young), 
+                 fill = brewer.pal(8, "Set1")[c(2)], 
+                 binwidth = 2) +
+  luke_theme +
+  theme(axis.title.x = element_text(hjust = 0.1),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.border = element_blank(),
+        plot.margin = margin(0, 0, 0, 0.5, "cm")) +
+  ylab(expression(italic(N)[males])) +
+  scale_y_continuous(limits = c(0, 17),
+                     breaks = c(0, 5, 10), position = "left") +
+  coord_flip()
+
+wing_dist_plot + plot_spacer() + wing_N_young_plot + n_young_dist_plot + 
+  plot_layout(ncol = 2,
+              heights = unit(c(2, 8), 'cm'),
+              widths = unit(c(8, 2), 'cm'))
+
+```
+Do earlier males have more mates? No
+```{r}
+mod_n_females_arrival <-
+  glmer(N_females ~ first_date + (1 | year_),
+        data = cap_05_09_std_pca_ten_pat_delta_res, family = poisson)
+
+summary(glht(mod_n_females_arrival))
+plot(allEffects(mod_n_females_arrival))
+```
+
+Does departure date relate to the number of mates acquired? No
+```{r}
+mod_n_females_departure <-
+  glmer(N_females ~ last_date + (1 | year_),
+        data = cap_05_09_std_pca_ten_pat_delta_res, family = poisson)
+
+summary(glht(mod_n_females_departure))
+plot(allEffects(mod_n_females_departure))
+```
+
+Do earlier males sire more young? No
+```{r}
+mod_n_young_arrival <-
+  glmer(N_young ~ first_date + (1 | year_),
+        data = cap_05_09_std_pca_ten_pat_delta_res, family = poisson)
+
+summary(glht(mod_n_young_arrival))
+plot(allEffects(mod_n_young_arrival))
+```
+
+Does departure date relate to the number of young sired? No
+```{r}
+mod_n_young_departure <-
+  glmer(N_young ~ last_date + (1 | year_),
+        data = cap_05_09_std_pca_ten_pat_delta_res, family = poisson)
+
+summary(glht(mod_n_young_departure))
+plot(allEffects(mod_n_young_departure))
+```
+
+Is the change in condition over season associated with arrival date? No
+```{r}
+mod_delta_arrival <-
+  lmer(delta_weight ~ first_date + (1 | year_),
+       data = cap_05_09_std_pca_ten_pat_delta_res)
+
+summary(glht(mod_delta_arrival))
+plot(allEffects(mod_delta_arrival))
+```
+
+Is the change in condition over season associated with departure date? No
+```{r}
+mod_delta_departure <-
+  lmer(delta_weight ~ last_date + (1 | year_),
+       data = cap_05_09_std_pca_ten_pat_delta_res)
+
+summary(glht(mod_delta_departure))
+plot(allEffects(mod_delta_departure))
+```
+#### Is body size associated with polygyny? 
+No relationship, while accounting for tenure
+```{r}
+mod_n_females_wing_tenure <-
+  glmer(N_females_0 ~ wing + tenure + (1 | year_),
+        data = cap_05_09_std_pca_ten_pat_delta_res, family = poisson)
+
+tbl_regression(mod_n_females_wing_tenure, intercept = TRUE)
+# ggeffect(mod_n_females_wing) %>% plot()
+
+# mod_n_females_PC1 <-
+#   glmer(N_females ~ structure_pc1 + (1 | year_),
+#         data = cap_05_09_std_pca_ten_pat_delta_res, family = poisson)
+# 
+# tbl_regression(mod_n_females_PC1, intercept = TRUE)
+# ggeffect(mod_n_females_PC1) %>% plot()
+# 
+# mod_n_females_tarsus <-
+#   glmer(N_females ~ tarsus + (1 | year_),
+#         data = cap_05_09_std_pca_ten_pat_delta_res, family = poisson)
+# 
+# tbl_regression(mod_n_females_tarsus, intercept = TRUE)
+# ggeffect(mod_n_females_tarsus) %>% plot()
+```
+
+#### Is body size associated with paternity?
+No relationship, while accounting for tenure
+```{r}
+#### using wing ----
+mod_n_young_wing_tenure <-
+  glmer(N_young_0 ~ wing + tenure + (1 | year_),
+        data = cap_05_09_std_pca_ten_pat_delta_res, family = poisson)
+
+# summary(mod_n_young_wing)
+# summary(glht(mod_n_young_wing))
+tbl_regression(mod_n_young_wing_tenure, intercept = TRUE)
+# ggeffect(mod_n_young_wing) %>% plot()
+
+# mod_n_young_wing_tenure_fits <- 
+#   as.data.frame(effect(term = "wing", mod = mod_n_young_wing_tenure, 
+#                        xlevels = list(wing = seq(min(cap_05_09_std_pca_ten_pat_delta_res[, "wing"], na.rm = TRUE),
+#                                                       max(cap_05_09_std_pca_ten_pat_delta_res[, "wing"], na.rm = TRUE), 0.5))))
+# 
+# wing_N_young_plot <-
+#   cap_05_09_std_pca_ten_pat_delta_res %>% 
+#   ungroup() %>% 
+#   ggplot() +
+#   geom_point(aes(x = wing, y = N_young),
+#              alpha = 0.4,
+#              shape = 19,
+#              color = brewer.pal(9, "Set1")[c(2)]) +
+#   geom_line(data = mod_n_young_wing_tenure_fits,
+#             aes(x = wing, y = fit),
+#             lwd = 1,
+#             color = brewer.pal(9, "Set1")[c(2)]) +
+#   geom_ribbon(data = mod_n_young_wing_tenure_fits, 
+#               aes(x = wing, ymax = upper, ymin = lower),
+#               lwd = 1, alpha = 0.25) +
+#   luke_theme +
+#   theme(panel.border = element_blank(),
+#         plot.margin = margin(0, 0, 0.5, 0.5, "cm"),
+#         axis.title.y = element_text(vjust = 5)) +
+#   scale_y_continuous(limits = c(min(cap_05_09_std_pca_ten_pat_delta_res$N_young, na.rm = TRUE), 
+#                                 max(cap_05_09_std_pca_ten_pat_delta_res$N_young, na.rm = TRUE) * 1.05)) +
+#   ylab("number of young sired") +
+#   xlab("wing length (mm)")
+# 
+# wing_dist_plot <-
+#   cap_05_09_std_pca_ten_pat_delta_res %>% 
+#   ungroup() %>% 
+#   # na.omit() %>% 
+#   ggplot() + 
+#   geom_boxplot(aes(x = wing, y = 16), 
+#                fill = brewer.pal(9, "Set1")[c(2)], 
+#                color = brewer.pal(9, "Set1")[c(2)],
+#                width = 1, alpha = 0.3) +
+#   geom_jitter(aes(x = wing, y = 13), 
+#               fill = brewer.pal(9, "Set1")[c(2)], 
+#               color = brewer.pal(9, "Set1")[c(2)],
+#               height = 0.5, alpha = 0.3) +
+#   geom_histogram(alpha = 0.3, aes(wing), 
+#                  fill = brewer.pal(9, "Set1")[c(2)], 
+#                  binwidth = 1) +
+#   luke_theme +
+#   theme(axis.title.y = element_text(hjust = 0.1),
+#         axis.title.x = element_blank(),
+#         axis.text.x = element_blank(),
+#         axis.ticks.x = element_blank(),
+#         panel.border = element_blank(),
+#         plot.margin = margin(0, 0, 0, 0.5, "cm")) +
+#   ylab(expression(italic(N)[males])) +
+#   scale_y_continuous(limits = c(0, 17),
+#                      breaks = c(0, 5, 10), position = "left")
+# 
+# n_young_dist_plot <-
+#   cap_05_09_std_pca_ten_pat_delta_res %>% 
+#   ungroup() %>% 
+#   # na.omit() %>% 
+#   ggplot() + 
+#   geom_boxplot(aes(x = N_young, y = 16), 
+#                fill = brewer.pal(9, "Set1")[c(2)], 
+#                color = brewer.pal(9, "Set1")[c(2)],
+#                width = 1, alpha = 0.3) +
+#   geom_jitter(aes(x = N_young, y = 13), 
+#               fill = brewer.pal(9, "Set1")[c(2)], 
+#               color = brewer.pal(9, "Set1")[c(2)],
+#               height = 0.5, alpha = 0.3) +
+#   geom_histogram(alpha = 0.3, aes(N_young), 
+#                  fill = brewer.pal(9, "Set1")[c(2)], 
+#                  binwidth = 1) +
+#   luke_theme +
+#   theme(axis.title.x = element_text(hjust = 0.1),
+#         axis.title.y = element_blank(),
+#         axis.text.y = element_blank(),
+#         axis.ticks.y = element_blank(),
+#         panel.border = element_blank(),
+#         plot.margin = margin(0, 0, 0, 0.5, "cm")) +
+#   ylab(expression(italic(N)[males])) +
+#   scale_y_continuous(limits = c(0, 17),
+#                      breaks = c(0, 5, 10), position = "left") +
+#   coord_flip()
+# 
+# wing_dist_plot + plot_spacer() + wing_N_young_plot + n_young_dist_plot + 
+#   plot_layout(ncol = 2,
+#               heights = unit(c(2, 8), 'cm'),
+#               widths = unit(c(8, 2), 'cm'))
+
+#### using PC1 ----
+# mod_n_young_PC1 <-
+#   glmer(N_young ~ structure_pc1 + (1 | year_),
+#         data = cap_05_09_std_pca_ten_pat_delta_res, family = poisson)
+# 
+# tbl_regression(mod_n_young_PC1, intercept = TRUE)
+# ggeffect(mod_n_young_PC1) %>% plot()
+# 
+# mod_n_young_PC1_fits <- 
+#   as.data.frame(effect(term = "structure_pc1", mod = mod_n_young_PC1, 
+#                        xlevels = list(structure_pc1 = seq(min(cap_05_09_std_pca_ten_pat_delta_res[, "structure_pc1"], na.rm = TRUE),
+#                                                           max(cap_05_09_std_pca_ten_pat_delta_res[, "structure_pc1"], na.rm = TRUE), 0.5))))
+# 
+# structure_pc1_N_young_plot <-
+#   cap_05_09_std_pca_ten_pat_delta_res %>% 
+#   ungroup() %>% 
+#   ggplot() +
+#   geom_point(aes(x = structure_pc1, y = N_young),
+#              alpha = 0.4,
+#              shape = 19,
+#              color = brewer.pal(9, "Set1")[c(2)]) +
+#   geom_line(data = mod_n_young_PC1_fits,
+#             aes(x = structure_pc1, y = fit),
+#             lwd = 1,
+#             color = brewer.pal(9, "Set1")[c(2)]) +
+#   geom_ribbon(data = mod_n_young_PC1_fits, 
+#               aes(x = structure_pc1, ymax = upper, ymin = lower),
+#               lwd = 1, alpha = 0.25) +
+#   luke_theme +
+#   theme(panel.border = element_blank(),
+#         plot.margin = margin(0, 0, 0.5, 0.5, "cm"),
+#         axis.title.y = element_text(vjust = 5)) +
+#   scale_y_continuous(limits = c(min(cap_05_09_std_pca_ten_pat_delta_res$N_young, na.rm = TRUE), 
+#                                 max(cap_05_09_std_pca_ten_pat_delta_res$N_young, na.rm = TRUE) * 1.05)) +
+#   ylab("number of young sired") +
+#   xlab("PC1")
+# 
+# structure_pc1_dist_plot <-
+#   cap_05_09_std_pca_ten_pat_delta_res %>% 
+#   ungroup() %>% 
+#   na.omit() %>% 
+#   ggplot() + 
+#   geom_boxplot(aes(x = structure_pc1, y = 16), 
+#                fill = brewer.pal(9, "Set1")[c(2)], 
+#                color = brewer.pal(9, "Set1")[c(2)],
+#                width = 1, alpha = 0.5) +
+#   geom_jitter(aes(x = structure_pc1, y = 13), 
+#               fill = brewer.pal(9, "Set1")[c(2)], 
+#               color = brewer.pal(9, "Set1")[c(2)],
+#               height = 0.5, alpha = 0.5) +
+#   geom_histogram(alpha = 0.5, aes(structure_pc1), 
+#                  fill = brewer.pal(9, "Set1")[c(2)], 
+#                  binwidth = 1) +
+#   luke_theme +
+#   theme(axis.title.y = element_text(hjust = 0.1),
+#         axis.title.x = element_blank(),
+#         axis.text.x = element_blank(),
+#         axis.ticks.x = element_blank(),
+#         panel.border = element_blank(),
+#         plot.margin = margin(0, 0, 0, 0.5, "cm")) +
+#   ylab(expression(italic(N)[males])) +
+#   scale_y_continuous(limits = c(0, 17),
+#                      breaks = c(0, 5, 10), position = "left")
+# 
+# n_young_dist_plot <-
+#   cap_05_09_std_pca_ten_pat_delta_res %>% 
+#   ungroup() %>% 
+#   na.omit() %>% 
+#   ggplot() + 
+#   geom_boxplot(aes(x = N_young, y = 16), 
+#                fill = brewer.pal(9, "Set1")[c(2)], 
+#                color = brewer.pal(9, "Set1")[c(2)],
+#                width = 1, alpha = 0.5) +
+#   geom_jitter(aes(x = N_young, y = 13), 
+#               fill = brewer.pal(9, "Set1")[c(2)], 
+#               color = brewer.pal(9, "Set1")[c(2)],
+#               height = 0.5, alpha = 0.5) +
+#   geom_histogram(alpha = 0.5, aes(N_young), 
+#                  fill = brewer.pal(9, "Set1")[c(2)], 
+#                  binwidth = 2) +
+#   luke_theme +
+#   theme(axis.title.x = element_text(hjust = 0.1),
+#         axis.title.y = element_blank(),
+#         axis.text.y = element_blank(),
+#         axis.ticks.y = element_blank(),
+#         panel.border = element_blank(),
+#         plot.margin = margin(0, 0, 0, 0.5, "cm")) +
+#   ylab(expression(italic(N)[males])) +
+#   scale_y_continuous(limits = c(0, 17),
+#                      breaks = c(0, 5, 10), position = "left") +
+#   coord_flip()
+# 
+# structure_pc1_dist_plot + plot_spacer() + structure_pc1_N_young_plot + n_young_dist_plot + 
+#   plot_layout(ncol = 2,
+#               heights = unit(c(2, 8), 'cm'),
+#               widths = unit(c(8, 2), 'cm'))
+# 
+# #### using tarsus ----
+# mod_n_young_tarsus <-
+#   glmer(N_young ~ tarsus + (1 | year_),
+#         data = cap_05_09_std_pca_ten_pat_delta_res, family = poisson)
+# 
+# tbl_regression(mod_n_young_tarsus, intercept = TRUE)
+# ggeffect(mod_n_young_tarsus) %>% plot()
+# 
+# mod_n_young_tarsus_fits <- 
+#   as.data.frame(effect(term = "tarsus", mod = mod_n_young_tarsus, 
+#                        xlevels = list(tarsus = seq(min(cap_05_09_std_pca_ten_pat_delta_res[, "tarsus"], na.rm = TRUE),
+#                                                           max(cap_05_09_std_pca_ten_pat_delta_res[, "tarsus"], na.rm = TRUE), 0.5))))
+# 
+# tarsus_N_young_plot <-
+#   cap_05_09_std_pca_ten_pat_delta_res %>% 
+#   ungroup() %>% 
+#   ggplot() +
+#   geom_point(aes(x = tarsus, y = N_young),
+#              alpha = 0.4,
+#              shape = 19,
+#              color = brewer.pal(9, "Set1")[c(2)]) +
+#   geom_line(data = mod_n_young_tarsus_fits,
+#             aes(x = tarsus, y = fit),
+#             lwd = 1,
+#             color = brewer.pal(9, "Set1")[c(2)]) +
+#   geom_ribbon(data = mod_n_young_tarsus_fits, 
+#               aes(x = tarsus, ymax = upper, ymin = lower),
+#               lwd = 1, alpha = 0.25) +
+#   luke_theme +
+#   theme(panel.border = element_blank(),
+#         plot.margin = margin(0, 0, 0.5, 0.5, "cm"),
+#         axis.title.y = element_text(vjust = 5)) +
+#   scale_y_continuous(limits = c(min(cap_05_09_std_pca_ten_pat_delta_res$N_young, na.rm = TRUE), 
+#                                 max(cap_05_09_std_pca_ten_pat_delta_res$N_young, na.rm = TRUE) * 1.05)) +
+#   ylab("number of young sired") +
+#   xlab("tarsus length (mm)")
+# 
+# tarsus_dist_plot <-
+#   cap_05_09_std_pca_ten_pat_delta_res %>% 
+#   ungroup() %>% 
+#   na.omit() %>% 
+#   ggplot() + 
+#   geom_boxplot(aes(x = tarsus, y = 16), 
+#                fill = brewer.pal(9, "Set1")[c(2)], 
+#                color = brewer.pal(9, "Set1")[c(2)],
+#                width = 1, alpha = 0.5) +
+#   geom_jitter(aes(x = tarsus, y = 13), 
+#               fill = brewer.pal(9, "Set1")[c(2)], 
+#               color = brewer.pal(9, "Set1")[c(2)],
+#               height = 0.5, alpha = 0.5) +
+#   geom_histogram(alpha = 0.5, aes(tarsus), 
+#                  fill = brewer.pal(9, "Set1")[c(2)], 
+#                  binwidth = 1) +
+#   luke_theme +
+#   theme(axis.title.y = element_text(hjust = 0.1),
+#         axis.title.x = element_blank(),
+#         axis.text.x = element_blank(),
+#         axis.ticks.x = element_blank(),
+#         panel.border = element_blank(),
+#         plot.margin = margin(0, 0, 0, 0.5, "cm")) +
+#   ylab(expression(italic(N)[males])) +
+#   scale_y_continuous(limits = c(0, 17),
+#                      breaks = c(0, 5, 10), position = "left")
+# 
+# n_young_dist_plot <-
+#   cap_05_09_std_pca_ten_pat_delta_res %>% 
+#   ungroup() %>% 
+#   na.omit() %>% 
+#   ggplot() + 
+#   geom_boxplot(aes(x = N_young, y = 16), 
+#                fill = brewer.pal(9, "Set1")[c(2)], 
+#                color = brewer.pal(9, "Set1")[c(2)],
+#                width = 1, alpha = 0.5) +
+#   geom_jitter(aes(x = N_young, y = 13), 
+#               fill = brewer.pal(9, "Set1")[c(2)], 
+#               color = brewer.pal(9, "Set1")[c(2)],
+#               height = 0.5, alpha = 0.5) +
+#   geom_histogram(alpha = 0.5, aes(N_young), 
+#                  fill = brewer.pal(9, "Set1")[c(2)], 
+#                  binwidth = 2) +
+#   luke_theme +
+#   theme(axis.title.x = element_text(hjust = 0.1),
+#         axis.title.y = element_blank(),
+#         axis.text.y = element_blank(),
+#         axis.ticks.y = element_blank(),
+#         panel.border = element_blank(),
+#         plot.margin = margin(0, 0, 0, 0.5, "cm")) +
+#   ylab(expression(italic(N)[males])) +
+#   scale_y_continuous(limits = c(0, 17),
+#                      breaks = c(0, 5, 10), position = "left") +
+#   coord_flip()
+# 
+# tarsus_dist_plot + plot_spacer() + tarsus_N_young_plot + n_young_dist_plot + 
+#   plot_layout(ncol = 2,
+#               heights = unit(c(2, 8), 'cm'),
+#               widths = unit(c(8, 2), 'cm'))
+```
+
+Is initial body weight associated with polygyny? No
+```{r}
+mod_n_females_weight_1_tenure <-
+  glmer(N_females_0 ~ weight_1 + tenure + (1 | year_),
+        data = cap_05_09_std_pca_ten_pat_delta_res, family = poisson)
+tbl_regression(mod_n_females_weight_1_tenure, intercept = TRUE)
+ggeffect(mod_n_females_weight_1_tenure) %>% plot()
+
+cap_05_09_std_pca_ten_pat_delta_res <-
+  cap_05_09_std_pca_ten_pat_delta_res %>% 
+  mutate(N_females_0 = ifelse(is.na(N_females), 0, N_females),
+         N_young_0 = ifelse(is.na(N_young), 0, N_young))
+
+ggplot(cap_05_09_std_pca_ten_pat_delta_res)+
+  geom_histogram(aes(N_young_0), binwidth = 1)
+
+ggplot(cap_05_09_std_pca_ten_pat_delta_res)+
+  geom_histogram(aes(N_females_0), binwidth = 1)
+
+mod_n_females_0_res <-
+  glmer(N_females_0 ~ mod_res + first_date + (1 | year_),
+        data = cap_05_09_std_pca_ten_pat_delta_res, family = poisson)
+tbl_regression(mod_n_females_0_res, intercept = TRUE)
+ggeffect(mod_n_females_0_res) %>% plot()
+
+# 
+mod_n_females_0_res_date_dev <-
+  glmer(N_females_0 ~ mod_res + date_deviance + (1 | year_),
+        data = cap_05_09_std_pca_ten_pat_delta_res, family = poisson)
+tbl_regression(mod_n_females_0_res_date_dev, intercept = TRUE)
+ggeffect(mod_n_females_0_res_date_dev) %>% plot()
+```
+
+Is initial body weight associated with paternity? Yes
+strong relationship between initial weight and the number of young sired (p = 0.01)
+also, a strong relationship between residual index and paternity (p < 0.001)
+```{r}
+mod_n_young_weight <-
+  glmer(N_young ~ weight_1 + (1 | year_),
+        data = cap_05_09_std_pca_ten_pat_delta_res, family = poisson)
+tbl_regression(mod_n_young_weight, intercept = TRUE)
+ggeffect(mod_n_young_weight) %>% plot()
+
+mod_n_young_weight_fits <- 
+  as.data.frame(effect(term = "weight_1", mod = mod_n_young_weight, 
+                       xlevels = list(weight_1 = seq(min(cap_05_09_std_pca_ten_pat_delta_res[, "weight_1"], na.rm = TRUE),
+                                                      max(cap_05_09_std_pca_ten_pat_delta_res[, "weight_1"], na.rm = TRUE), 0.5))))
+
+mod_n_young_weight_plot <-
+  cap_05_09_std_pca_ten_pat_delta_res %>% 
+  ungroup() %>% 
+  ggplot() +
+  geom_point(aes(x = weight_1, y = N_young),
+             alpha = 0.4,
+             shape = 19,
+             color = brewer.pal(9, "Set1")[c(2)]) +
+  geom_line(data = mod_n_young_weight_fits,
+            aes(x = weight_1, y = fit),
+            lwd = 1,
+            color = brewer.pal(9, "Set1")[c(2)]) +
+  geom_ribbon(data = mod_n_young_weight_fits, 
+              aes(x = weight_1, ymax = upper, ymin = lower),
+              lwd = 1, alpha = 0.25) +
+  luke_theme +
+  theme(panel.border = element_blank(),
+        plot.margin = margin(0, 0, 0.5, 0.5, "cm"),
+        axis.title.y = element_text(vjust = 5)) +
+  scale_y_continuous(limits = c(min(cap_05_09_std_pca_ten_pat_delta_res$N_young, na.rm = TRUE), 
+                                max(cap_05_09_std_pca_ten_pat_delta_res$N_young, na.rm = TRUE) * 1.05)) +
+  ylab("number of young sired") +
+  xlab("initial body weight (g)")
+
+weight_1_dist_plot <-
+  cap_05_09_std_pca_ten_pat_delta_res %>% 
+  ungroup() %>% 
+  na.omit() %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = weight_1, y = 16), 
+               fill = brewer.pal(9, "Set1")[c(2)], 
+               color = brewer.pal(9, "Set1")[c(2)],
+               width = 1, alpha = 0.5) +
+  geom_jitter(aes(x = weight_1, y = 13), 
+              fill = brewer.pal(9, "Set1")[c(2)], 
+              color = brewer.pal(9, "Set1")[c(2)],
+              height = 0.5, alpha = 0.5) +
+  geom_histogram(alpha = 0.5, aes(weight_1), 
+                 fill = brewer.pal(9, "Set1")[c(2)], 
+                 binwidth = 1) +
+  luke_theme +
+  theme(axis.title.y = element_text(hjust = 0.1),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        panel.border = element_blank(),
+        plot.margin = margin(0, 0, 0, 0.5, "cm")) +
+  ylab(expression(italic(N)[males])) +
+  scale_y_continuous(limits = c(0, 17),
+                     breaks = c(0, 5, 10), position = "left")
+
+n_young_dist_plot <-
+  cap_05_09_std_pca_ten_pat_delta_res %>% 
+  ungroup() %>% 
+  na.omit() %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = N_young, y = 16), 
+               fill = brewer.pal(9, "Set1")[c(2)], 
+               color = brewer.pal(9, "Set1")[c(2)],
+               width = 1, alpha = 0.5) +
+  geom_jitter(aes(x = N_young, y = 13), 
+              fill = brewer.pal(9, "Set1")[c(2)], 
+              color = brewer.pal(9, "Set1")[c(2)],
+              height = 0.5, alpha = 0.5) +
+  geom_histogram(alpha = 0.5, aes(N_young), 
+                 fill = brewer.pal(9, "Set1")[c(2)], 
+                 binwidth = 1) +
+  luke_theme +
+  theme(axis.title.x = element_text(hjust = 0.1),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.border = element_blank(),
+        plot.margin = margin(0, 0, 0, 0.5, "cm")) +
+  ylab(expression(italic(N)[males])) +
+  scale_y_continuous(limits = c(0, 17),
+                     breaks = c(0, 5, 10), position = "left") +
+  scale_x_continuous(limits = c(min(cap_05_09_std_pca_ten_pat_delta_res$N_young, na.rm = TRUE), 
+                                max(cap_05_09_std_pca_ten_pat_delta_res$N_young, na.rm = TRUE) * 1.05)) +
+  coord_flip()
+
+weight_1_dist_plot + plot_spacer() + mod_n_young_weight_plot + n_young_dist_plot + 
+  plot_layout(ncol = 2,
+              heights = unit(c(2, 8), 'cm'),
+              widths = unit(c(8, 2), 'cm'))
+```
+
+Is body weight associated with likelihood of having paternity? No
+```{r}
+mod_weight_pat_bin <-
+  glmer(cbind(pat, no_pat) ~ weight_1 + wing + (1 | year_),
+        data = cap_05_09_std_pca_ten_pat_delta_res, family = "binomial")
+tbl_regression(mod_weight_pat_bin, intercept = TRUE)
+ggeffect(mod_weight_pat_bin) %>% plot()
+```
+
+Is body weight associated with likelihood of having paternity? No
+```{r}
+mod_weight_pat_bin <-
+  glmer(cbind(pat, no_pat) ~ weight_1 + (1 | year_),
+        data = cap_05_09_std_pca_ten_pat_delta_res, family = "binomial")
+tbl_regression(mod_weight_pat_bin, intercept = TRUE)
+ggeffect(mod_weight_pat_bin) %>% plot()
+```
+
+Is body size associated with likelihood of having paternity? No
+```{r}
+mod_wing_pat_bin <-
+  glmer(cbind(pat, no_pat) ~ wing + (1 | year_),
+        data = cap_05_09_std_pca_ten_pat_delta_res, family = "binomial")
+tbl_regression(mod_wing_pat_bin, intercept = TRUE)
+ggeffect(mod_wing_pat_bin) %>% plot()
+```
+
+Is weight change associated with likelihood of having paternity? No
+```{r}
+mod_delta_weight_pat_bin <-
+  glmer(cbind(pat, no_pat) ~ delta_weight + (1 | year_),
+        data = cap_05_09_std_pca_ten_pat_delta_res, family = "binomial")
+tbl_regression(mod_delta_weight_pat_bin, intercept = TRUE)
+ggeffect(mod_delta_weight_pat_bin) %>% plot()
+```
+
+Is weight change associated with likelihood of having paternity? Yes
+Males that are heavy for their wing length tend to have a higher chance to secure paternity
+```{r}
+# # fatter males have a higher chance of securing paternity
+# mod_res_pat_bin <-
+#   glmer(cbind(pat, no_pat) ~ mod_res + (1 | year_),
+#         data = cap_05_09_std_pca_ten_pat_delta_res, family = "binomial")
+# tbl_regression(mod_res_pat_bin, intercept = TRUE)
+# ggeffect(mod_res_pat_bin) %>% plot()
+# 
+# mod_tenure_first_weight_delta_pat_bin <-
+#   glmer(cbind(pat, no_pat) ~ tenure + weight_1 + delta_weight + (1 | year_),
+#         data = cap_05_09_std_pca_ten_pat_delta_res, family = "binomial")
+# tbl_regression(mod_tenure_first_weight_delta_pat_bin, intercept = TRUE)
+# ggeffect(mod_tenure_first_weight_delta_pat_bin) %>% plot()
+# 
+# # fatter males have a higher chance of securing paternity
+# mod_res_pat_first_date_ten_bin <-
+#   glmer(cbind(pat, no_pat) ~ mod_res + first_date + tenure + (1 | year_),
+#         data = cap_05_09_std_pca_ten_pat_delta_res, family = "binomial")
+# tbl_regression(mod_res_pat_first_date_ten_bin, intercept = TRUE)
+# ggeffect(mod_res_pat_first_date_ten_bin) %>% plot()
+# 
+# cor.test(cap_05_09_std_pca_ten_pat_delta_res$tenure, cap_05_09_std_pca_ten_pat_delta_res$first_date)
+# 
+# # fatter males have a higher chance of securing paternity
+# mod_res_pat_first_date_bin <-
+#   glmer(cbind(pat, no_pat) ~ mod_res + first_date + (1 | year_),
+#         data = cap_05_09_std_pca_ten_pat_delta_res, family = "binomial")
+# tbl_regression(mod_res_pat_first_date_bin, intercept = TRUE)
+# ggeffect(mod_res_pat_first_date_bin) %>% plot()
+# 
+# ggplot(cap_05_09_std_pca_ten_pat_delta_res, 
+#        aes(y = pat, x = mod_res)) +
+#   geom_point() +
+#   geom_smooth(
+#     method = glm,
+#     method.args = list(family = "binomial")) +
+#   facet_grid(year_ ~ .) +
+#   luke_theme +
+#   ylab("probability of siring at least one offspring") +
+#   xlab("relative body mass (residuals, g)")
+# 
+# mod_res_pat_first_date_bin_fits <- 
+#   as.data.frame(effect(term = c("mod_res", "first_date"), mod = mod_res_pat_first_date_bin, 
+#                        xlevels = list(mod_res = seq(min(cap_05_09_std_pca_ten_pat_delta_res[, "mod_res"], na.rm = TRUE),
+#                                                     max(cap_05_09_std_pca_ten_pat_delta_res[, "mod_res"], na.rm = TRUE), 0.5),
+#                                       first_date = seq(min(cap_05_09_std_pca_ten_pat_delta_res[, "first_date"], na.rm = TRUE),
+#                                                        max(cap_05_09_std_pca_ten_pat_delta_res[, "first_date"], na.rm = TRUE), 0.5))))
+# 
+# mod_n_young_weight_plot <-
+#   cap_05_09_std_pca_ten_pat_delta_res %>% 
+#   ungroup() %>% 
+#   ggplot() +
+#   geom_point(aes(x = weight_1, y = N_young),
+#              alpha = 0.4,
+#              shape = 19,
+#              color = brewer.pal(9, "Set1")[c(2)]) +
+#   geom_line(data = mod_n_young_weight_fits,
+#             aes(x = weight_1, y = fit),
+#             lwd = 1,
+#             color = brewer.pal(9, "Set1")[c(2)]) +
+#   geom_ribbon(data = mod_n_young_weight_fits, 
+#               aes(x = weight_1, ymax = upper, ymin = lower),
+#               lwd = 1, alpha = 0.25) +
+#   luke_theme +
+#   theme(panel.border = element_blank(),
+#         plot.margin = margin(0, 0, 0.5, 0.5, "cm"),
+#         axis.title.y = element_text(vjust = 5)) +
+#   scale_y_continuous(limits = c(min(cap_05_09_std_pca_ten_pat_delta_res$N_young, na.rm = TRUE), 
+#                                 max(cap_05_09_std_pca_ten_pat_delta_res$N_young, na.rm = TRUE) * 1.05)) +
+#   ylab("number of young sired") +
+#   xlab("initial body weight (g)")
+# 
+# weight_1_dist_plot <-
+#   cap_05_09_std_pca_ten_pat_delta_res %>% 
+#   ungroup() %>% 
+#   na.omit() %>% 
+#   ggplot() + 
+#   geom_boxplot(aes(x = weight_1, y = 16), 
+#                fill = brewer.pal(9, "Set1")[c(2)], 
+#                color = brewer.pal(9, "Set1")[c(2)],
+#                width = 1, alpha = 0.5) +
+#   geom_jitter(aes(x = weight_1, y = 13), 
+#               fill = brewer.pal(9, "Set1")[c(2)], 
+#               color = brewer.pal(9, "Set1")[c(2)],
+#               height = 0.5, alpha = 0.5) +
+#   geom_histogram(alpha = 0.5, aes(weight_1), 
+#                  fill = brewer.pal(9, "Set1")[c(2)], 
+#                  binwidth = 1) +
+#   luke_theme +
+#   theme(axis.title.y = element_text(hjust = 0.1),
+#         axis.title.x = element_blank(),
+#         axis.text.x = element_blank(),
+#         axis.ticks.x = element_blank(),
+#         panel.border = element_blank(),
+#         plot.margin = margin(0, 0, 0, 0.5, "cm")) +
+#   ylab(expression(italic(N)[males])) +
+#   scale_y_continuous(limits = c(0, 17),
+#                      breaks = c(0, 5, 10), position = "left")
+# 
+# n_young_dist_plot <-
+#   cap_05_09_std_pca_ten_pat_delta_res %>% 
+#   ungroup() %>% 
+#   na.omit() %>% 
+#   ggplot() + 
+#   geom_boxplot(aes(x = N_young, y = 16), 
+#                fill = brewer.pal(9, "Set1")[c(2)], 
+#                color = brewer.pal(9, "Set1")[c(2)],
+#                width = 1, alpha = 0.5) +
+#   geom_jitter(aes(x = N_young, y = 13), 
+#               fill = brewer.pal(9, "Set1")[c(2)], 
+#               color = brewer.pal(9, "Set1")[c(2)],
+#               height = 0.5, alpha = 0.5) +
+#   geom_histogram(alpha = 0.5, aes(N_young), 
+#                  fill = brewer.pal(9, "Set1")[c(2)], 
+#                  binwidth = 1) +
+#   luke_theme +
+#   theme(axis.title.x = element_text(hjust = 0.1),
+#         axis.title.y = element_blank(),
+#         axis.text.y = element_blank(),
+#         axis.ticks.y = element_blank(),
+#         panel.border = element_blank(),
+#         plot.margin = margin(0, 0, 0, 0.5, "cm")) +
+#   ylab(expression(italic(N)[males])) +
+#   scale_y_continuous(limits = c(0, 17),
+#                      breaks = c(0, 5, 10), position = "left") +
+#   scale_x_continuous(limits = c(min(cap_05_09_std_pca_ten_pat_delta_res$N_young, na.rm = TRUE), 
+#                                 max(cap_05_09_std_pca_ten_pat_delta_res$N_young, na.rm = TRUE) * 1.05)) +
+#   coord_flip()
+# 
+# weight_1_dist_plot + plot_spacer() + mod_n_young_weight_plot + n_young_dist_plot + 
+#   plot_layout(ncol = 2,
+#               heights = unit(c(2, 8), 'cm'),
+#               widths = unit(c(8, 2), 'cm'))
+
+```
+
+
+```{r}
+cor.test(cap_05_09_std_pca_ten_pat_delta_res$mod_res, cap_05_09_std_pca_ten_pat_delta_res$first_date)
+
+mod_res_N_fem_0_first_date_pos <-
+  glmer(N_females_0 ~ mod_res + first_date + (1 | year_),
+        data = cap_05_09_std_pca_ten_pat_delta_res, family = "poisson")
+tbl_regression(mod_res_N_fem_0_first_date_pos, intercept = TRUE)
+ggeffect(mod_res_N_fem_0_first_date_pos) %>% plot()
+
+hist(cap_05_09_std_pca_ten_pat_delta_res$N_females_0)
+```
+
+Is weight change associated with likelihood of having paternity? No
+```{r}
+# fatter males have greater paternity
+mod_res_n_young <-
+  glmer(N_young ~ mod_res + (1 | year_),
+        data = cap_05_09_std_pca_ten_pat_delta_res, family = "poisson")
+tbl_regression(mod_res_n_young, intercept = TRUE)
+ggeffect(mod_res_n_young) %>% plot()
+```
+
+
+```{r}
+table(cap_05_09_std_pca_ten_pat_delta_res$year_)
+```
+
+
+## EDA on body mass
+```{r}
+# ggplot(cap, aes(y = weight, x = factor(year_)) ) + 
+# geom_boxplot()
+# 
+# ggplot(cap, aes(y = weight, x = capture_id, group = ID) ) + 
+# facet_wrap(~year_) + 
+# geom_smooth(method = lm, se = FALSE)
+# 
+# 
+# ggplot(wcap, aes(delta_weight)) +
+#   geom_histogram()
+# 
+# ggplot(wcap, aes(y = delta_weight, x = delta_time) ) +
+#   geom_point() + 
+#   geom_smooth()
+
+
+```
+
+## Paternity
+
+### Paternity and body mass
+
+Subset of males that sired at least one young
+
+```{r}
+# x = merge(cap, pat, by = c("ID", "year_"))
+# 
+# ggplot(x, aes(y = N_females, x = weight)) +
+#   geom_point() 
+# 
+# glmmTMB(N_females ~ weight + (1|year_), family = poisson, x) |>
+# tbl_regression(intercept = TRUE)
+# 
+# 
+# ggplot(x, aes(y = N_young, x = weight)) +
+#   geom_point() 
+# 
+# glmmTMB(N_young ~ weight + (1|year_), family = poisson, x) |>
+# tbl_regression(intercept = TRUE)
+
+```
+
+### Paternity and body mass
+
+All males
+
+```{r}
+#using first capture
+# x = merge(cap, pat, by = c("ID", "year_"), all.x = TRUE)
+# x[is.na(N_females), N_females := 0]
+# x[is.na(N_young), N_young := 0]
+# 
+# 
+# ggplot(x, aes(y = N_females, x = weight)) +
+#   geom_point() 
+# 
+# glmmTMB(N_females ~ weight + (1|year_), zi=~weight, family = poisson, x) |>
+# tbl_regression(intercept = TRUE)
+# 
+# 
+# ggplot(x, aes(y = N_young, x = weight)) +
+#   geom_point() 
+# 
+# glmmTMB(N_young ~ weight + (1|year_), zi=~weight, family = poisson, x) |>
+# tbl_regression(intercept = TRUE)
+
+```
+
+### Paternity and tenure
+
+```{r}
+# x <- merge(cap, pat, by = c("ID", "year_"), all.x = TRUE)
+# x[is.na(N_females), N_females := 0]
+# x[is.na(N_young), N_young := 0]
+# 
+# x = merge(x, ten, by= c('ID', "year_"))
+# 
+# 
+# fm = glmmTMB(N_females ~ tenureDays + (1|year_), family = poisson, x)
+# 
+# tbl_regression(fm , intercept = TRUE)
+# 
+# ggeffect(fm) |> plot()
+# 
+# 
+# fm = glmmTMB(N_young ~ tenureDays + (1|year_), family = poisson, x)
+# tbl_regression(fm, intercept = TRUE)
+# 
+# ggeffect(fm) |> plot()
+
+
+```
+
+### Paternity, tenure and body mass
+
+```{r}
+# x <- merge(cap, pat, by = c("ID", "year_"), all.x = TRUE)
+# x[is.na(N_females), N_females := 0]
+# x[is.na(N_young), N_young := 0]
+# 
+# x = merge(x, ten, by= c('ID', "year_"))
+# 
+# 
+# fm = glmmTMB(N_females ~ weight + tenureDays + (1|year_), family = poisson, x)
+# 
+# tbl_regression(fm , intercept = TRUE)
+# 
+# g1 = ggeffect(fm, "weight") |> plot()
+# g2 = ggeffect(fm, "tenureDays") |> plot()
+# 
+# g1 + g2
+# 
+# 
+# fm = glmmTMB(N_young ~ weight + tenureDays + (1 | year_), family = poisson, x)
+# tbl_regression(fm, intercept = TRUE)
+# 
+# g1 <- ggeffect(fm, "weight") |> plot()
+# g2 <- ggeffect(fm, "tenureDays") |> plot()
+# 
+# g1 + g2
+
+
+```
+
+### Paternity and body mass change
+
+```{r}
+# x = merge(wcap, pat, by = c("ID", "year_"))
+# x = merge(x, ten, by = c("ID", "year_"))
+# 
+# ggplot(x, aes(y = N_young, x = delta_weight)) +
+#   geom_point() +
+#   geom_smooth(method = lm)
+# 
+# glm(N_young ~ weight_1 + delta_weight, poisson, x) |>
+# tbl_regression(intercept = TRUE)
+# 
+# glm(N_young ~ tenureDays + weight_1 + delta_weight, poisson, x) |>
+# tbl_regression(intercept = TRUE)
+
+
+
+
+
+
+```

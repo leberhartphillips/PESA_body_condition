@@ -64,17 +64,27 @@ pat <-
 #      file = "R/DAT/pat.rds")
 
 # query scidb for tenure data
-# ten <- 
-#   dbq(q = "SELECT * FROM PESAatBARROW.CAPTURES") %>% 
-#   dplyr::select(year_, ID, ul, ll, ur, lr, start_capture_date_time) %>% 
-#   left_join(., dbq(q = "SELECT * FROM PESAatBARROW.SEX") %>% 
-#               select(ID, sex), 
+# ten <-
+#   dbq(q = "SELECT * FROM PESAatBARROW.CAPTURES") %>%
+#   dplyr::select(year_, ID, ul, ll, ur, lr, start_capture_date_time) %>%
+#   left_join(., dbq(q = "SELECT * FROM PESAatBARROW.SEX") %>%
+#               select(ID, sex),
 #             by = "ID", multiple = "all") %>%
-#   distinct() %>% 
+#   distinct() %>%
 #   filter(sex == 1)
 # 
-# dbq(q = "SELECT * FROM PESAatBARROW.RESIGHTINGS") %>% 
-#   dplyr::select(year_, UL, LL, UR, LR, gps_date_time) %>% 
+PESAatBARROW.RESIGHTINGS <- dbq(q = "SELECT * FROM PESAatBARROW.RESIGHTINGS")
+save(PESAatBARROW.RESIGHTINGS,
+     file = "R/DAT/res.rds")
+
+PESAatBARROW.CAPTURES <- dbq(q = "SELECT * FROM PESAatBARROW.CAPTURES")
+save(PESAatBARROW.CAPTURES,
+     file = "R/DAT/cap.rds")
+
+PESAatBARROW.SEX <- dbq(q = "SELECT * FROM PESAatBARROW.SEX")
+save(PESAatBARROW.SEX,
+     file = "R/DAT/sex.rds")
+#   dplyr::select(year_, UL, LL, UR, LR, gps_date_time)
 #   
 # 
 # 
