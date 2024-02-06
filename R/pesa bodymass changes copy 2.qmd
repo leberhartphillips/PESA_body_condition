@@ -721,11 +721,12 @@ ggplot(data.frame(resid = resid, fitted = fitted(stats_mod_weight$mod)), aes(x =
   luke_theme
 ```
 
-Then let's explore the effect sizes and predictions. 
-* wing and weight are tightly correlated as expected
-* strong negative within-individual effect of season on body mass (after controlling for wing length)
-* strong negative between-individual effect of season on body mass (after controlling for wing length): "selective appearance"
-* no between-individual effect of season on body mass (after controlling for wing length): no "selective disappearance"
+Then let's explore the effect sizes and predictions.
+
+- wing and weight are tightly correlated as expected
+- strong negative within-individual effect of season on body mass (after controlling for wing length)
+- strong negative between-individual effect of season on body mass (after controlling for wing length): "selective appearance"
+- no between-individual effect of season on body mass (after controlling for wing length): no "selective disappearance"
 
 ```{r}
 #### Table of effect sizes (van de Pol method) ----
@@ -2863,10 +2864,12 @@ cap_05_09_23_std_pca_delta_odba %>%
 ### Average ODBA model
 model assessing the relationship between average ODBA and change in body mass (converted to daily rate to account for varied time windows between body mass measures). Note that all variables are standardized.
 ```{r, echo=TRUE}
+# non-standardized model
 mod_avgODBA_delta <-
   lm(daily_delta_weight ~ avg_ODBA + weight_1 + first_date,
         data = cap_05_09_23_std_pca_delta_odba)
 
+# standardized model
 mod_avgODBA_delta_ <-
   lm(daily_delta_weight ~ avg_ODBA_ + weight_1_ + first_date_,
         data = cap_05_09_23_std_pca_delta_odba)
@@ -2876,15 +2879,15 @@ check for colinearity among predictor variables (looks good!)
 ```{r}
 cap_05_09_23_std_pca_delta_odba %>% 
   ungroup() %>% 
-  dplyr::select(avg_ODBA_, weight_1_, first_date_, date_deviance_) %>% 
+  dplyr::select(avg_ODBA_, weight_1_, first_date_) %>% 
   cor() %>% 
   corrplot(type = "upper", method = "number", tl.srt = 45)
 ```
 
 
-- significant positive effect of ODBA on change in mass (more active males experience less mass change over time)
-- significant negative effect of initial mass on change in mass (heavier males experience more mass change over time)
-- significant negative effect of first capture date on change in mass (late arriving males experience more mass change over time)
+- strong positive effect of ODBA on change in mass (more active males experience less mass change over time)
+- strong negative effect of initial mass on change in mass (heavier males experience more mass change over time)
+- weak negative effect of first capture date on change in mass (late arriving males experience more mass change over time)
 ```{r}
 tbl_regression(mod_avgODBA_delta_, intercept = TRUE)
 
