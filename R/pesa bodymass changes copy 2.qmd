@@ -108,6 +108,8 @@ gm_mean = function(x, na.rm=TRUE, zero.propagate = FALSE){
     exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
   }
 }
+
+`%!in%` = Negate(`%in%`)
 ```
 
 
@@ -127,6 +129,8 @@ caps_23_phenology <-
                                 format = "%Y-%m-%d %H:%M:%S")) %>% 
   mutate(year_ = year(gpsdt)) %>% 
   mutate(capture_id = paste(ID, year_, sep = "_")) %>% 
+  mutate(weight = ifelse(ID == "69407" & form_id == 103, weight + 3.75, weight),
+         wt_w_tag = ifelse(ID == "69407" & form_id == 103, 1, wt_w_tag)) %>%
   filter(!is.na(gpsdt)) %>% 
   # mutate(gpsdt = as.POSIXct(gpsdt, origin = "1970-01-01")) %>% 
   mutate(gpsdt_year_start = as.POSIXct(paste0(year_, "-01-01 00:00:00"), 
@@ -148,6 +152,8 @@ caps_23_first_caps <-
                                 format = "%Y-%m-%d %H:%M:%S")) %>% 
   mutate(year_ = year(gpsdt)) %>% 
   mutate(capture_id = paste(ID, year_, sep = "_")) %>% 
+  mutate(weight = ifelse(ID == "69407" & form_id == 103, weight + 3.75, weight),
+         wt_w_tag = ifelse(ID == "69407" & form_id == 103, 1, wt_w_tag)) %>% 
   filter(!is.na(gpsdt)) %>% 
   # mutate(gpsdt = as.POSIXct(gpsdt, origin = "1970-01-01")) %>% 
   mutate(gpsdt_year_start = as.POSIXct(paste0(year_, "-01-01 00:00:00"), 
@@ -206,6 +212,8 @@ caps_23 %>%
   mutate(gpsdt = as.POSIXct(paste(date, paste0(caught, ":00"), sep = " "), 
                                 tz = "America/Anchorage", 
                                 format = "%Y-%m-%d %H:%M:%S")) %>% 
+  mutate(weight = ifelse(ID == "69407" & form_id == 103, weight + 3.75, weight),
+         wt_w_tag = ifelse(ID == "69407" & form_id == 103, 1, wt_w_tag)) %>% 
   filter(!is.na(gpsdt)) %>% 
   group_by(ID) %>% 
   mutate(n_by_id = n(),
@@ -236,6 +244,8 @@ cap_05_09_23_std <-
   mutate(gpsdt = as.POSIXct(paste(date, paste0(caught, ":00"), sep = " "), 
                             tz = "America/Anchorage", 
                             format = "%Y-%m-%d %H:%M:%S")) %>% 
+  mutate(weight = ifelse(ID == "69407" & form_id == 103, weight + 3.75, weight),
+         wt_w_tag = ifelse(ID == "69407" & form_id == 103, 1, wt_w_tag)) %>% 
   filter(!is.na(gpsdt)) %>% 
   group_by(ID) %>% 
   mutate(n_by_id = n(),
@@ -479,6 +489,20 @@ single_use_tags <-
   arrange(desc(n_birds)) %>% 
   filter(n_birds < 2)
 
+caps_23 %>% 
+  filter(is.na(tagID))
+
+caps_23 %>% 
+  mutate(gpsdt = as.POSIXct(paste(date, paste0(caught, ":00"), sep = " "), 
+                                tz = "America/Anchorage", 
+                                format = "%Y-%m-%d %H:%M:%S")) %>% 
+  group_by(ID) %>% 
+  arrange(gpsdt) %>% 
+  slice(1) %>%
+  group_by(tagID) %>% 
+  mutate(n_birds = n_distinct(ID)) %>% 
+  arrange(desc(n_birds), tagID, gpsdt)
+
 first_caps_2023 <-
   caps_23 %>% 
   filter(tagID %in% single_use_tags$tagID) %>% 
@@ -529,7 +553,7 @@ visualize annual variation in tenure data for the full and reduced datasets
 ```{r}
 # plot of tenure distributions by year
 tenure_05_09 %>% 
-  select(capture_id, tenure, year_) %>% 
+  dplyr::select(capture_id, tenure, year_) %>% 
   distinct() %>% 
   ggplot() +
   geom_histogram(aes(tenure), fill = brewer.pal(9, "Set1")[c(2)], 
@@ -2758,15 +2782,142 @@ weight_dist_plot + delta_weight_dist_plot + tenure_dist_plot + plot_spacer() +
 ## Linking Overall Body Dynamic Acceleration to change in body mass
 
 ```{r}
-ID_tagID_key <-   
+ID_tagID_key <-
   caps_23 %>% 
-  mutate(year_ = substr(date, 1, 4)) %>% 
-  dplyr::select(ID, tagID, year_) %>% 
-  distinct() %>% 
+  mutate(gpsdt = as.POSIXct(paste(date, paste0(caught, ":00"), sep = " "), 
+                                tz = "America/Anchorage", 
+                                format = "%Y-%m-%d %H:%M:%S")) %>% 
+  mutate(year_ = year(gpsdt)) %>% 
+  group_by(ID) %>% 
+  arrange(gpsdt) %>% 
+  slice(1) %>% 
+  dplyr::select(ID, tagID, year_, gpsdt) %>% 
   na.omit() %>% 
-  rename(capture_id = ID) %>% 
-  mutate(capture_id = paste(as.character(capture_id), year_, sep = "_")) %>% 
+  rename(capture_id = ID,
+         start_tag_data = gpsdt) %>% 
+  mutate(capture_id = paste(as.character(capture_id), year_, sep = "_")) %>%
+  ungroup() %>% 
   dplyr::select(-year_)
+
+brain_end_tag_data <- 
+  caps_23 %>% 
+  mutate(gpsdt = as.POSIXct(paste(date, paste0(caught, ":00"), sep = " "), 
+                                tz = "America/Anchorage", 
+                                format = "%Y-%m-%d %H:%M:%S")) %>% 
+  mutate(year_ = year(gpsdt)) %>% 
+  group_by(ID) %>% 
+  arrange(gpsdt) %>% 
+  slice(n()) %>% 
+  dplyr::select(ID, tagID, year_, gpsdt, dead, comments) %>%
+  filter(str_detect(comments, "brain") | dead == 1) %>%
+  rename(capture_id = ID,
+         end_tag_data = gpsdt) %>% 
+  mutate(capture_id = paste(as.character(capture_id), year_, sep = "_")) %>%
+  ungroup() %>% 
+  dplyr::select(-year_, -dead, -comments)
+
+# non_brain_end_tag_data <- 
+#   caps_23 %>% 
+#   mutate(gpsdt = as.POSIXct(paste(date, paste0(caught, ":00"), sep = " "), 
+#                                 tz = "America/Anchorage", 
+#                                 format = "%Y-%m-%d %H:%M:%S")) %>% 
+#   mutate(year_ = year(gpsdt)) %>% 
+#   mutate(capture_id = paste(ID, year_, sep = "_")) %>% 
+#   filter(capture_id %!in% brain_end_tag_data$capture_id) %>% 
+#   group_by(ID) %>% 
+#   arrange(gpsdt) %>% 
+#   slice(n()) %>% 
+#   dplyr::select(ID, tagID, year_, gpsdt, dead, comments)
+#   mutate(gpsdt = as.POSIXct(paste(date, paste0(caught, ":00"), sep = " "), 
+#                                 tz = "America/Anchorage", 
+#                                 format = "%Y-%m-%d %H:%M:%S")) %>% 
+#   filter(!is.na(gpsdt)) %>% 
+#   group_by(ID, tagID) %>% 
+#   arrange(gpsdt) %>% 
+#   summarise(first_data = first(gpsdt))
+
+last_ODBA <- 
+  ODBA_23 %>% 
+  mutate(tagID = toupper(tagID)) %>% 
+  group_by(tagID) %>% 
+  arrange(timestamp) %>% 
+  summarise(last_ODBA = last(timestamp))
+
+last_GPS <- 
+  GPS_23 %>% 
+  mutate(tagID = toupper(tagID)) %>% 
+  group_by(tagID) %>% 
+  arrange(timestamp) %>% 
+  summarise(last_GPS = last(timestamp))
+
+first_caps_2023 %>% 
+  pull(tagID) %>% unique()
+
+# GPS_23 %>% 
+#   filter(tagID %in% ID_tagID_key$tagID) %>% 
+#   pull(tagID) %>% unique()
+# 
+# GPS_23 %>% 
+#   filter(year(timestamp) == 2023) %>% 
+#   pull(tagID) %>% unique() %>% length()
+# 
+# GPS_23 %>% 
+#   filter(tagID == "043D") %>% 
+#   filter(timestamp > as.POSIXct("2023-06-11 10:00:00") & timestamp < as.POSIXct("2023-06-15 19:17:00"))
+
+ID_tagID_time_key <- 
+  left_join(ID_tagID_key, last_ODBA, by = "tagID") %>% 
+  left_join(., last_GPS, by = "tagID") %>%
+  mutate(time_diff = last_ODBA - last_GPS) %>% 
+  mutate(end_tag_data = ifelse(as.numeric(time_diff) < 0, last_GPS, last_ODBA) %>% 
+           as.numeric() %>% as.POSIXct()) %>% 
+  mutate(end_tag_data = ifelse(is.na(end_tag_data), start_tag_data, end_tag_data) %>% 
+           as.numeric() %>% as.POSIXct()) %>% 
+  dplyr::select(-last_ODBA, -last_GPS, -time_diff) %>% 
+  left_join(., brain_end_tag_data, by = "capture_id") %>%
+  # mutate(time_diff = end_tag_data.x - end_tag_data.y) %>% 
+  mutate(end_tag_data = ifelse(is.na(end_tag_data.y), end_tag_data.x, end_tag_data.y) %>% 
+           as.numeric() %>% as.POSIXct(),
+         dead = ifelse(is.na(end_tag_data.y), 0, 1)) %>% 
+  dplyr::select(-end_tag_data.y, -end_tag_data.x, -tagID.y) %>% 
+  rename(tagID = tagID.x)
+
+ID_tagID_time_key %>% 
+  filter(str_detect(capture_id, "69407"))
+
+caps_23 %>% filter(wt_w_tag != 1)
+
+cap_05_09_23_std_pca_ten <-
+  left_join(first_caps_2023, last_ODBA, by = "tagID") %>% 
+  left_join(., last_GPS, by = "tagID") %>% 
+  filter(!is.na(last_ODBA) | !is.na(last_GPS)) %>% 
+  mutate(last_data = ifelse(last_ODBA > last_GPS, last_ODBA, last_GPS) %>% 
+           as.POSIXct()) %>% 
+  # mutate(last_data_ = as.Date(last_data))
+  mutate(tenure = as.numeric(as.Date(last_data)-as.Date(first_data))) %>% 
+  arrange(desc(tenure)) %>% 
+  # mutate(year_ = 2023) %>% 
+  mutate(capture_id = paste(ID, 2023, sep = "_")) %>% 
+  ungroup() %>% 
+  dplyr::select(-ID:-last_data) %>% 
+    left_join(cap_05_09_23_std_pca_ten, ., by = "capture_id") %>% 
+    mutate(tenure = ifelse(!is.na(tenure.x), tenure.x, ifelse(!is.na(tenure.y), tenure.y, NA)))
+
+# caps_23 %>% 
+#   mutate(gpsdt = as.POSIXct(paste(date, paste0(caught, ":00"), sep = " "), 
+#                                 tz = "America/Anchorage", 
+#                                 format = "%Y-%m-%d %H:%M:%S")) %>% 
+#   mutate(year_ = year(gpsdt)) %>% 
+#   group_by(ID, tagID, year_) %>% 
+#   arrange(gpsdt) %>% 
+#   slice(n()) %>% 
+#   dplyr::select(ID, tagID, year_, gpsdt, dead, comments) %>%
+#   filter(str_detect(comments, "brain") | dead == 1) %>% 
+#   rename(capture_id = ID,
+#          end_tag_data = gpsdt) %>% 
+#   mutate(capture_id = paste(as.character(capture_id), year_, sep = "_")) %>%
+#   ungroup() %>% 
+#   dplyr::select(-year_)
 
 cap_05_09_23_std_pca_delta <-
   cap_05_09_23_std_pca %>% 
@@ -2820,19 +2971,56 @@ ODBA_23_ <-
               gm_ODBA = gm_mean(ODBA/10000)) %>% 
   arrange(tagID)
 
+
+
 ```
 
-inspect temporal changes in ODBA for the males that we have repeated measures of body mass (windows of ODBA reflect the time between first and last capture)
+inspect temporal changes in ODBA for the males that we have repeated measures of body mass (windows of ODBA reflect the time between first and last capture). Black points mark body mass measuring events.
 ```{r, fig.height=16}
-ODBA_23 %>% 
+library(tidytext)
+
+ODBA_23_plot_df <- 
+  ODBA_23 %>% 
   mutate(tagID = toupper(tagID)) %>% 
   left_join(., tag_ID_cap_dates_key, by = "tagID") %>% 
   filter(!is.na(gpsdt_1)) %>% 
   arrange(tagID, timestamp) %>% 
   filter(timestamp >= gpsdt_1 & timestamp <= gpsdt_2) %>% 
   mutate(capture_id = substr(capture_id, 1, 5)) %>% 
-  ggplot(.) +
-  geom_line(aes(x = timestamp, y = ODBA/10000), color = "gray70") +
+  left_join(., cap_05_09_23_std_pca_delta %>%
+              mutate(daily_delta_weight = delta_weight/date_deviance,
+                     capture_id = substr(capture_id, 1, 5)) %>%
+              dplyr::select(capture_id, daily_delta_weight), by = "capture_id")
+
+cap_05_09_23_std_pca_ten_plot_df <- 
+  left_join(cap_05_09_23_std_pca_ten, 
+            cap_05_09_23_std_pca_delta %>% 
+              mutate(daily_delta_weight = delta_weight/date_deviance) %>%
+                dplyr::select(capture_id, daily_delta_weight), by = "capture_id")
+
+# specify the factor levels according to the rank (for plotting)
+ODBA_23_plot_df$capture_id_ordered <- 
+  factor(ODBA_23_plot_df$capture_id, 
+         levels = unique(ODBA_23_plot_df$capture_id[order(ODBA_23_plot_df$daily_delta_weight, decreasing = TRUE)]), 
+         ordered = TRUE)
+
+cap_05_09_23_std_pca_ten_plot_df$capture_id_ordered <- 
+  factor(cap_05_09_23_std_pca_ten_plot_df$capture_id, 
+         levels = unique(cap_05_09_23_std_pca_ten_plot_df$capture_id[order(cap_05_09_23_std_pca_ten_plot_df$daily_delta_weight, decreasing = TRUE)]), 
+         ordered = TRUE)
+#%>%
+  # mutate(capture_id = as.factor(capture_id)) %>% 
+  # mutate(capture_id = fct_reorder(capture_id, daily_delta_weight)) 
+  # arrange(daily_delta_weight) %>%
+  # mutate_at(vars(capture_id), funs(factor(., levels = unique(.)))) %>% # convert to factor
+  ggplot() +
+  geom_line(data = ODBA_23_plot_df,
+            aes(x = timestamp - hours(9), y = ODBA/10000), color = "gray70") +
+  geom_point(data =
+               cap_05_09_23_std_pca_ten_plot_df %>%
+               filter(year_ == 2023) %>%
+               mutate(capture_id = substr(capture_id, 1, 5)),
+                      aes(x = gpsdt, y = 0)) +
   facet_grid(capture_id ~ .) +
   luke_theme +
   scale_y_continuous(breaks = c(0, 3)) +
@@ -2849,7 +3037,7 @@ ODBA_23 %>%
   write.csv("/Users/luketheduke2/Documents/Academic/Postdoc_Bart/projects/PESA_body_condition/R/DAT/ODBA_PESA_body_mass.csv")
 ```
 
-sum ODBA data for each individual between body mass measures and convert to a daily rate to account for varied time windows between body mass measures). Do the same for delta weight (i.e., daily change).
+summarise ODBA data for each individual between body mass measures and convert delta weight to a daily rate to account for varied time windows between body mass measures).
 ```{r}
 cap_05_09_23_std_pca_delta_odba <-
   cap_05_09_23_std_pca_delta %>% 
@@ -2860,17 +3048,18 @@ cap_05_09_23_std_pca_delta_odba <-
          gm_ODBA_ = scale(gm_ODBA),
          weight_1_ = scale(weight_1),
          first_date_ = scale(first_date), 
-         date_deviance_ = scale(date_deviance))
+         date_deviance_ = scale(date_deviance)) %>% 
+  mutate(daily_delta_weight_perc = (daily_delta_weight/weight_1)*100)
 
 cap_05_09_23_std_pca_delta_odba %>% 
   dplyr::select(year_, capture_id, weight_1, weight_1_, first_date, first_date_, 
                 date_deviance, date_deviance_, delta_weight, 
-                daily_delta_weight, avg_ODBA, avg_ODBA_, gm_ODBA, gm_ODBA_) %>% 
+                daily_delta_weight, avg_ODBA, avg_ODBA_, gm_ODBA, gm_ODBA_, daily_delta_weight_perc) %>% 
   datatable(class = 'cell-border stripe', rownames = FALSE, filter = 'top')
 ```
 
 ### Average ODBA model
-model assessing the relationship between average ODBA and change in body mass (converted to daily rate to account for varied time windows between body mass measures). Note that all variables are standardized.
+model assessing the relationship between average ODBA and change in body mass (converted to daily rate to account for varied time windows between body mass measures).
 ```{r, echo=TRUE}
 # non-standardized model
 mod_avgODBA_delta <-
@@ -2895,6 +3084,8 @@ cap_05_09_23_std_pca_delta_odba %>%
 - strong positive effect of ODBA on change in mass (more active males experience less mass change over time)
 - strong negative effect of initial mass on change in mass (heavier males experience more mass change over time)
 - weak negative effect of first capture date on change in mass (late arriving males experience more mass change over time)
+Note: table shows standardized effect sizes.
+
 ```{r}
 tbl_regression(mod_avgODBA_delta_, intercept = TRUE)
 
@@ -2924,21 +3115,26 @@ mod_avgODBA_delta_fits <-
 avgODBA_delta_plot <-
   ggplot() +
   geom_point(data = cap_05_09_23_std_pca_delta_odba,
-             aes(x = avg_ODBA, y = delta_weight),
+             aes(x = avg_ODBA, y = daily_delta_weight),
              alpha = 0.4,
              shape = 19,  
              color = brewer.pal(9, "Set1")[c(2)]) +
+  geom_text(data = cap_05_09_23_std_pca_delta_odba, 
+            aes(x = avg_ODBA, y = daily_delta_weight, 
+                label = ifelse(daily_delta_weight > quantile(daily_delta_weight, 0.95) |
+                                 daily_delta_weight < quantile(daily_delta_weight, 0.05),
+     substr(as.character(capture_id), 1, 5), '')), hjust = -0.1, vjust = -0.1, size = 3) +
   geom_line(data = mod_avgODBA_delta_fits, aes(x = avg_ODBA, y = fit),
-            lwd = 0.5) +
+            lwd = 1, color = brewer.pal(9, "Set1")[c(2)]) +
   geom_ribbon(data = mod_avgODBA_delta_fits, aes(x = avg_ODBA, 
                                                ymax = upper, ymin = lower),
-              lwd = 1, alpha = 0.25) +
+              alpha = 0.25, fill = brewer.pal(9, "Set1")[c(2)]) +
   luke_theme +
   theme(panel.border = element_blank(),
         plot.margin = margin(0, 0, 0, 0.5, "cm"),
         axis.title.y = element_text(vjust = 5)) +
-  scale_y_continuous(limits = c(min(cap_05_09_23_std_pca_delta_odba$daily_delta_weight, na.rm = TRUE),
-                                max(cap_05_09_23_std_pca_delta_odba$daily_delta_weight, na.rm = TRUE) * 1.3)) +
+  scale_y_continuous(limits = c(min(cap_05_09_23_std_pca_delta_odba$daily_delta_weight, na.rm = TRUE) * 1.15,
+                                max(cap_05_09_23_std_pca_delta_odba$daily_delta_weight, na.rm = TRUE) * 1.15)) +
   ylab("daily body mass change (g)") +
   xlab(expression(paste("grand average ODBA (g minute",''^{-1}, ")", sep = ""))) +
   annotate(geom = "text", 
@@ -2951,17 +3147,19 @@ ODBA_dist_plot <-
   cap_05_09_23_std_pca_delta_odba %>% 
   ggplot() + 
   geom_boxplot(aes(x = avg_ODBA, y = 9), 
-               fill = brewer.pal(9, "Set1")[c(2)], 
-               color = brewer.pal(9, "Set1")[c(2)],
-               width = 1, alpha = 0.5) +
+               fill = brewer.pal(9, "Set1")[c(9)], 
+               color = brewer.pal(9, "Set1")[c(9)],
+               width = 1, alpha = 0.3, outlier.shape = 4) +
   geom_jitter(aes(x = avg_ODBA, y = 7), 
-              fill = brewer.pal(9, "Set1")[c(2)], 
-              color = brewer.pal(9, "Set1")[c(2)],
-              height = 0.5, alpha = 0.5) +
+              fill = brewer.pal(9, "Set1")[c(9)], 
+              color = brewer.pal(9, "Set1")[c(9)],
+              height = 0.5, alpha = 0.3) +
   geom_histogram(alpha = 0.5, aes(avg_ODBA), 
-                 fill = brewer.pal(9, "Set1")[c(2)]) +
+                 fill = brewer.pal(9, "Set1")[c(9)], alpha = 0.3) +
   luke_theme +
-  theme(axis.title.y = element_text(hjust = 0.1),
+  theme(axis.title.y = element_text(hjust = 0.1, colour = "grey70"),
+        axis.ticks.y = element_line(colour = "grey70"),
+        axis.text.y = element_text(colour = "grey70"),
         axis.title.x = element_blank(),
         axis.text.x = element_blank(),
         axis.ticks.x = element_blank(),
@@ -2976,18 +3174,20 @@ weight_dist_plot <-
   cap_05_09_23_std_pca_delta_odba %>% 
   ggplot() + 
   geom_boxplot(aes(x = daily_delta_weight, y = 23), 
-               fill = brewer.pal(9, "Set1")[c(2)], 
-               color = brewer.pal(9, "Set1")[c(2)],
-               width = 1, alpha = 0.5) +
+               fill = brewer.pal(9, "Set1")[c(9)], 
+               color = brewer.pal(9, "Set1")[c(9)],
+               width = 1, alpha = 0.3, outlier.shape = 4) +
   geom_jitter(aes(x = daily_delta_weight, y = 20), 
-              fill = brewer.pal(9, "Set1")[c(2)], 
-              color = brewer.pal(9, "Set1")[c(2)],
-              height = 0.5, alpha = 0.5) +
+              fill = brewer.pal(9, "Set1")[c(9)], 
+              color = brewer.pal(9, "Set1")[c(9)],
+              height = 0.5, alpha = 0.3) +
   geom_histogram(alpha = 0.5, aes(daily_delta_weight), 
-                 fill = brewer.pal(9, "Set1")[c(2)], 
-                 binwidth = 1) +
+                 fill = brewer.pal(9, "Set1")[c(9)], 
+                 binwidth = 1, alpha = 0.3) +
   luke_theme +
-  theme(axis.title.x = element_text(hjust = 0.1),
+  theme(axis.title.x = element_text(hjust = 0.1, colour = "grey70"),
+        axis.ticks.x = element_line(colour = "grey70"),
+        axis.text.x = element_text(colour = "grey70"),
         axis.title.y = element_blank(),
         axis.text.y = element_blank(),
         axis.ticks.y = element_blank(),
@@ -2995,8 +3195,8 @@ weight_dist_plot <-
         plot.margin = margin(0, 0, 0, 0.5, "cm")) +
   ylab(expression(italic(N)[males])) +
   xlab("daily body mass change (g)") +
-  scale_x_continuous(limits = c(min(cap_05_09_23_std_pca_delta_odba$daily_delta_weight, na.rm = TRUE), 
-                                max(cap_05_09_23_std_pca_delta_odba$daily_delta_weight, na.rm = TRUE) * 1.05)) +
+  scale_x_continuous(limits = c(min(cap_05_09_23_std_pca_delta_odba$daily_delta_weight, na.rm = TRUE) * 1.15, 
+                                max(cap_05_09_23_std_pca_delta_odba$daily_delta_weight, na.rm = TRUE) * 1.15)) +
   scale_y_continuous(limits = c(0, 24),
                      breaks = c(0, 5, 10, 15), position = "left") +
   coord_flip()
@@ -3049,21 +3249,244 @@ for(i in 1:nboots){
 
 coefs_boot_output_df <- do.call(bind_rows, coefs_boot_output)
 fits_boot_output_df <- do.call(bind_rows, fits_boot_output)
-
-coefs_boot_output_df %>% 
   
-# avgODBA_delta_boot_plot <-
 ggplot() +
   geom_point(data = cap_05_09_23_std_pca_delta_odba,
-             aes(x = avg_ODBA, y = delta_weight),
+             aes(x = avg_ODBA, y = daily_delta_weight),
              alpha = 0.4,
              shape = 19,  
              color = brewer.pal(9, "Set1")[c(2)]) +
   geom_line(data = fits_boot_output_df, aes(x = avg_ODBA, y = fit, group = boot),
-            lwd = 0.5, alpha = 0.05) +
-  # geom_ribbon(data = mod_avgODBA_delta_fits, aes(x = avg_ODBA, 
-  #                                              ymax = upper, ymin = lower),
-  #             lwd = 1, alpha = 0.25) +
+            lwd = 0.5, color = brewer.pal(9, "Set1")[c(2)], alpha = 0.05) +
+  luke_theme +
+  theme(panel.border = element_blank(),
+        plot.margin = margin(0, 0, 0, 0.5, "cm"),
+        axis.title.y = element_text(vjust = 5)) +
+  scale_y_continuous(limits = c(min(cap_05_09_23_std_pca_delta_odba$daily_delta_weight, na.rm = TRUE) * 1.15,
+                                max(cap_05_09_23_std_pca_delta_odba$daily_delta_weight, na.rm = TRUE) * 1.15)) +
+  ylab("daily body mass change (g)") +
+  xlab(expression(paste("grand average ODBA (g minute",''^{-1}, ")", sep = ""))) +
+  annotate(geom = "text", 
+           x = c(min(cap_05_09_23_std_pca_delta_odba$avg_ODBA, na.rm = TRUE) +
+                   ((max(cap_05_09_23_std_pca_delta_odba$avg_ODBA, na.rm = TRUE) -
+                      min(cap_05_09_23_std_pca_delta_odba$avg_ODBA, na.rm = TRUE)) / 4)),
+           y = 2, label = "1000 bootstraps of model\nrandomly drawing 30 males")
+```
+
+
+```{r, fig.height=5, fig.width=10}
+ggplot(data = coefs_boot_output_df, aes(x = Estimate, y = parameter, fill = factor(stat(quantile)))) +
+  # geom_density_ridges(scale = 0.9) +
+  stat_density_ridges(
+    geom = "density_ridges_gradient",
+    calc_ecdf = TRUE,
+    quantiles = c(0.025, 0.975),
+    scale = 2
+  ) +
+  scale_fill_manual(
+    name = "Probability", values = c("#FF0000A0", "#A0A0A0A0", "#0000FFA0"),
+    labels = c("(0, 0.025]", "(0.025, 0.975]", "(0.975, 1]")
+  ) +
+  geom_vline(xintercept = 0)+
+  scale_x_continuous(expand = c(0, 0)) +
+   scale_y_discrete(expand = c(0, 0), labels = c("intercept", "avg. ODBA", "first capture date", "initial body mass")) +
+   coord_cartesian(clip = "off") +
+   theme_minimal(base_size = 14) + 
+   theme(axis.text.y = element_text(vjust = 0),
+         axis.title.y = element_blank()) +
+  xlab("standardized effect size")
+```
+
+### Average ODBA model (percent change in body mass)
+model assessing the relationship between average ODBA and percent change in body mass (converted to daily rate to account for varied time windows between body mass measures).
+```{r, echo=TRUE}
+# non-standardized model
+mod_avgODBA_delta_p <-
+  lm(daily_delta_weight_perc ~ avg_ODBA + first_date + weight_1,
+        data = cap_05_09_23_std_pca_delta_odba)
+
+# standardized model
+mod_avgODBA_delta_p_ <-
+  lm(daily_delta_weight_perc ~ avg_ODBA_ + first_date_ + weight_1,
+        data = cap_05_09_23_std_pca_delta_odba)
+```
+
+- strong positive effect of ODBA on change in mass (more active males experience less mass change over time)
+- strong negative effect of initial mass on change in mass (heavier males experience more mass change over time)
+- weak negative effect of first capture date on change in mass (late arriving males experience more mass change over time)
+ Note: table shows standardized effect sizes.
+```{r}
+tbl_regression(mod_avgODBA_delta_p_, intercept = TRUE)
+
+tidy_mod_avgODBA_delta_p_ <-
+  tidy(mod_avgODBA_delta_p_, conf.int = TRUE, conf.method = "boot", nsim = 1000)
+
+# significant positive effect of ODBA on change in mass (more active males change less)
+# significant negative effect of initial mass on change in mass (heavier males change more)
+# significant negative effect of first capture date on change in mass (more change in late arriving males)
+# tidy_mod_avgODBA_delta
+
+pval_daily_sumODBA <- 
+  tidy_mod_avgODBA_delta_p_ %>% 
+  filter(term == "avg_ODBA_") %>% 
+  pull(p.value)
+
+# hist(cap_05_09_23_std_pca_delta_odba$delta_weight)
+# hist(cap_05_09_23_std_pca_delta_odba$avg_ODBA)
+
+mod_avgODBA_delta_p_fits <- 
+  as.data.frame(effect(term = "avg_ODBA", mod = mod_avgODBA_delta_p, 
+                       xlevels = list(sd_ODBA = seq(min(cap_05_09_23_std_pca_delta_odba[, "avg_ODBA"], 
+                                                        na.rm = TRUE),
+                                                 max(cap_05_09_23_std_pca_delta_odba[, "avg_ODBA"], 
+                                                     na.rm = TRUE), 10))))
+
+avgODBA_delta_p_plot <-
+  ggplot() +
+  geom_point(data = cap_05_09_23_std_pca_delta_odba,
+             aes(x = avg_ODBA, y = daily_delta_weight_perc),
+             alpha = 0.4,
+             shape = 19,  
+             color = brewer.pal(9, "Set1")[c(2)]) +
+  geom_text(data = cap_05_09_23_std_pca_delta_odba, 
+            aes(x = avg_ODBA, y = daily_delta_weight_perc, 
+                label = ifelse(daily_delta_weight_perc > quantile(daily_delta_weight_perc, 0.95) |
+                                 daily_delta_weight_perc < quantile(daily_delta_weight_perc, 0.05),
+     substr(as.character(capture_id), 1, 5), '')), hjust = -0.1, vjust = -0.1, size = 3) +
+  geom_line(data = mod_avgODBA_delta_p_fits, aes(x = avg_ODBA, y = fit),
+            lwd = 1, color = brewer.pal(9, "Set1")[c(2)]) +
+  geom_ribbon(data = mod_avgODBA_delta_p_fits, aes(x = avg_ODBA, 
+                                               ymax = upper, ymin = lower),
+              fill = brewer.pal(9, "Set1")[c(2)], alpha = 0.25) +
+  luke_theme +
+  theme(panel.border = element_blank(),
+        plot.margin = margin(0, 0, 0, 0.5, "cm"),
+        axis.title.y = element_text(vjust = 5)) +
+  scale_y_continuous(limits = c(min(cap_05_09_23_std_pca_delta_odba$daily_delta_weight_perc, na.rm = TRUE) * 1.15,
+                                max(cap_05_09_23_std_pca_delta_odba$daily_delta_weight_perc, na.rm = TRUE) * 1.15)) +
+  ylab("daily body mass change (%)") +
+  xlab(expression(paste("grand average ODBA (g minute",''^{-1}, ")", sep = ""))) +
+  annotate(geom = "text", 
+           x = c(min(cap_05_09_23_std_pca_delta_odba$avg_ODBA, na.rm = TRUE) +
+                   ((max(cap_05_09_23_std_pca_delta_odba$avg_ODBA, na.rm = TRUE) -
+                      min(cap_05_09_23_std_pca_delta_odba$avg_ODBA, na.rm = TRUE)) / 4)),
+           y = 2, label = paste0("p = ", round(pval_daily_sumODBA, 4)))
+
+ODBA_dist_plot <-
+  cap_05_09_23_std_pca_delta_odba %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = avg_ODBA, y = 9), 
+               fill = brewer.pal(9, "Set1")[c(9)], 
+               color = brewer.pal(9, "Set1")[c(9)],
+               width = 1, alpha = 0.3, outlier.shape = 4) +
+  geom_jitter(aes(x = avg_ODBA, y = 7), 
+              fill = brewer.pal(9, "Set1")[c(9)], 
+              color = brewer.pal(9, "Set1")[c(9)],
+              height = 0.5, alpha = 0.3) +
+  geom_histogram(alpha = 0.5, aes(avg_ODBA), 
+                 fill = brewer.pal(9, "Set1")[c(9)], alpha = 0.3) +
+  luke_theme +
+  theme(axis.title.y = element_text(hjust = 0.1, colour = "grey70"),
+        axis.ticks.y = element_line(colour = "grey70"),
+        axis.text.y = element_text(colour = "grey70"),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        panel.border = element_blank(),
+        plot.margin = margin(0, 0, 0, 0.5, "cm")) +
+  ylab(expression(italic(N)[males])) +
+  xlab("average ODBA") +
+  scale_y_continuous(limits = c(0, 10),
+                     breaks = c(0, 5), position = "left")
+
+weight_dist_plot <-
+  cap_05_09_23_std_pca_delta_odba %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = daily_delta_weight_perc, y = 23), 
+               fill = brewer.pal(9, "Set1")[c(9)], 
+               color = brewer.pal(9, "Set1")[c(9)],
+               width = 1, alpha = 0.5, outlier.shape = 4) +
+  geom_jitter(aes(x = daily_delta_weight_perc, y = 20), 
+              fill = brewer.pal(9, "Set1")[c(9)], 
+              color = brewer.pal(9, "Set1")[c(9)],
+              height = 0.5, alpha = 0.5) +
+  geom_histogram(alpha = 0.5, aes(daily_delta_weight_perc), 
+                 fill = brewer.pal(9, "Set1")[c(9)], 
+                 binwidth = 0.5) +
+  luke_theme +
+  theme(axis.title.x = element_text(hjust = 0.1, colour = "grey70"),
+        axis.ticks.x = element_line(colour = "grey70"),
+        axis.text.x = element_text(colour = "grey70"),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.border = element_blank(),
+        plot.margin = margin(0, 0, 0, 0.5, "cm")) +
+  ylab(expression(italic(N)[males])) +
+  xlab("daily body mass change (g)") +
+  scale_x_continuous(limits = c(min(cap_05_09_23_std_pca_delta_odba$daily_delta_weight_perc, na.rm = TRUE) * 1.15,
+                                max(cap_05_09_23_std_pca_delta_odba$daily_delta_weight_perc, na.rm = TRUE) * 1.15)) +
+  scale_y_continuous(limits = c(0, 24),
+                     breaks = c(0, 5, 10, 15), position = "left") +
+  coord_flip()
+
+ODBA_dist_plot + plot_spacer() + avgODBA_delta_p_plot + weight_dist_plot + 
+  plot_layout(ncol = 2,
+              heights = unit(c(2, 8), 'cm'),
+              widths = unit(c(8, 2), 'cm'))
+```
+
+### Bootstrap of the average ODBA model (percent change in body mass)
+```{r, fig.height=5, fig.width=5, fig.align='center'}
+nboots = 1000
+
+coefs_boot_output <- vector("list", nboots)
+fits_boot_output <- vector("list", nboots)
+
+for(i in 1:nboots){
+  
+  boot_ids <- sample(cap_05_09_23_std_pca_delta_odba$capture_id, 30)
+  
+  sampled_data <- 
+    cap_05_09_23_std_pca_delta_odba %>% 
+    filter(capture_id %in% boot_ids)
+  
+  mod_boot_ <-
+    lm(daily_delta_weight_perc ~ avg_ODBA_ + weight_1_ + first_date_,
+       data = sampled_data)
+  
+  mod_boot <-
+    lm(daily_delta_weight_perc ~ avg_ODBA + weight_1 + first_date,
+       data = sampled_data)
+  
+  coefs_boot <- 
+    summary(mod_boot_)$coefficients %>% 
+    as.data.frame() %>%
+    mutate(parameter = rownames(.)) %>% 
+    mutate(boot = i) %>% 
+    `rownames<-`( NULL )
+
+  mod_boot_fits <- 
+    as.data.frame(effect(term = "avg_ODBA", mod = mod_boot, 
+                       xlevels = list("avg_ODBA" = seq(min(cap_05_09_23_std_pca_delta_odba[, "avg_ODBA"], na.rm = TRUE),
+                                                 max(cap_05_09_23_std_pca_delta_odba[, "avg_ODBA"], na.rm = TRUE), 0.005)))) %>% 
+    mutate(boot = i)
+  
+  coefs_boot_output[[i]] <- coefs_boot
+  fits_boot_output[[i]] <- mod_boot_fits
+}
+
+coefs_boot_output_df <- do.call(bind_rows, coefs_boot_output)
+fits_boot_output_df <- do.call(bind_rows, fits_boot_output)
+
+ggplot() +
+  geom_point(data = cap_05_09_23_std_pca_delta_odba,
+             aes(x = avg_ODBA, y = daily_delta_weight_perc),
+             alpha = 0.4,
+             shape = 19,  
+             color = brewer.pal(9, "Set1")[c(2)]) +
+  geom_line(data = fits_boot_output_df, aes(x = avg_ODBA, y = fit, group = boot),
+            lwd = 0.5, color = brewer.pal(9, "Set1")[c(2)], alpha = 0.05) +
   luke_theme +
   theme(panel.border = element_blank(),
         plot.margin = margin(0, 0, 0, 0.5, "cm"),
@@ -3103,8 +3526,9 @@ ggplot(data = coefs_boot_output_df, aes(x = Estimate, y = parameter, fill = fact
   xlab("standardized effect size")
 ```
 
+
 ### Geometric mean ODBA model
-model assessing the relationship between geometric mean ODBA and change in body mass (converted to daily rate to account for varied time windows between body mass measures). Note that all variables are standardized.
+model assessing the relationship between geometric mean ODBA and change in body mass (converted to daily rate to account for varied time windows between body mass measures).
 ```{r, echo=TRUE}
 # non-standardized model
 mod_gmODBA_delta <-
@@ -3117,18 +3541,10 @@ mod_gmODBA_delta_ <-
         data = cap_05_09_23_std_pca_delta_odba)
 ```
 
-check for colinearity among predictor variables (looks good!)
-```{r}
-cap_05_09_23_std_pca_delta_odba %>% 
-  ungroup() %>% 
-  dplyr::select(gm_ODBA_, weight_1_, first_date_) %>% 
-  cor() %>% 
-  corrplot(type = "upper", method = "number", tl.srt = 45)
-```
-
 - strong positive effect of ODBA on change in mass (more active males experience less mass change over time)
 - strong negative effect of initial mass on change in mass (heavier males experience more mass change over time)
 - weak negative effect of first capture date on change in mass (late arriving males experience more mass change over time)
+ Note: table shows standardized effect sizes.
 ```{r}
 tbl_regression(mod_gmODBA_delta_, intercept = TRUE)
 
@@ -3158,21 +3574,26 @@ mod_gmODBA_delta_fits <-
 gmODBA_delta_plot <-
   ggplot() +
   geom_point(data = cap_05_09_23_std_pca_delta_odba,
-             aes(x = gm_ODBA, y = delta_weight),
+             aes(x = gm_ODBA, y = daily_delta_weight),
              alpha = 0.4,
              shape = 19,  
              color = brewer.pal(9, "Set1")[c(2)]) +
+  geom_text(data = cap_05_09_23_std_pca_delta_odba,
+            aes(x = gm_ODBA, y = daily_delta_weight,
+                label = ifelse(daily_delta_weight > quantile(daily_delta_weight, 0.95) |
+                                 daily_delta_weight < quantile(daily_delta_weight, 0.05),
+     substr(as.character(capture_id), 1, 5), '')), hjust = -0.1, vjust = -0.1, size = 3) +
   geom_line(data = mod_gmODBA_delta_fits, aes(x = gm_ODBA, y = fit),
-            lwd = 0.5) +
+            lwd = 1, color = brewer.pal(9, "Set1")[c(2)]) +
   geom_ribbon(data = mod_gmODBA_delta_fits, aes(x = gm_ODBA, 
                                                ymax = upper, ymin = lower),
-              lwd = 1, alpha = 0.25) +
+              fill = brewer.pal(9, "Set1")[c(2)], alpha = 0.25) +
   luke_theme +
   theme(panel.border = element_blank(),
         plot.margin = margin(0, 0, 0, 0.5, "cm"),
         axis.title.y = element_text(vjust = 5)) +
-  scale_y_continuous(limits = c(min(cap_05_09_23_std_pca_delta_odba$daily_delta_weight, na.rm = TRUE),
-                                max(cap_05_09_23_std_pca_delta_odba$daily_delta_weight, na.rm = TRUE) * 1.3)) +
+  scale_y_continuous(limits = c(min(cap_05_09_23_std_pca_delta_odba$daily_delta_weight, na.rm = TRUE) * 1.15,
+                                max(cap_05_09_23_std_pca_delta_odba$daily_delta_weight, na.rm = TRUE) * 1.15)) +
   ylab("daily body mass change (g)") +
   xlab(expression(paste("geometric mean ODBA (g minute",''^{-1}, ")", sep = ""))) +
   annotate(geom = "text", 
@@ -3185,17 +3606,20 @@ ODBA_dist_plot <-
   cap_05_09_23_std_pca_delta_odba %>% 
   ggplot() + 
   geom_boxplot(aes(x = gm_ODBA, y = 9), 
-               fill = brewer.pal(9, "Set1")[c(2)], 
-               color = brewer.pal(9, "Set1")[c(2)],
-               width = 1, alpha = 0.5) +
+               fill = brewer.pal(9, "Set1")[c(9)], 
+               color = brewer.pal(9, "Set1")[c(9)],
+               width = 1, alpha = 0.3) +
   geom_jitter(aes(x = gm_ODBA, y = 7), 
-              fill = brewer.pal(9, "Set1")[c(2)], 
-              color = brewer.pal(9, "Set1")[c(2)],
-              height = 0.5, alpha = 0.5) +
+              fill = brewer.pal(9, "Set1")[c(9)], 
+              color = brewer.pal(9, "Set1")[c(9)],
+              height = 0.5, alpha = 0.3) +
   geom_histogram(alpha = 0.5, aes(gm_ODBA), 
-                 fill = brewer.pal(9, "Set1")[c(2)]) +
+                 fill = brewer.pal(9, "Set1")[c(9)], 
+                 alpha = 0.3) +
   luke_theme +
-  theme(axis.title.y = element_text(hjust = 0.1),
+  theme(axis.title.y = element_text(hjust = 0.1, colour = "grey70"),
+        axis.ticks.y = element_line(colour = "grey70"),
+        axis.text.y = element_text(colour = "grey70"),
         axis.title.x = element_blank(),
         axis.text.x = element_blank(),
         axis.ticks.x = element_blank(),
@@ -3210,18 +3634,20 @@ weight_dist_plot <-
   cap_05_09_23_std_pca_delta_odba %>% 
   ggplot() + 
   geom_boxplot(aes(x = daily_delta_weight, y = 23), 
-               fill = brewer.pal(9, "Set1")[c(2)], 
-               color = brewer.pal(9, "Set1")[c(2)],
-               width = 1, alpha = 0.5) +
+               fill = brewer.pal(9, "Set1")[c(9)], 
+               color = brewer.pal(9, "Set1")[c(9)],
+               width = 1, alpha = 0.3, outlier.shape = 4) +
   geom_jitter(aes(x = daily_delta_weight, y = 20), 
-              fill = brewer.pal(9, "Set1")[c(2)], 
-              color = brewer.pal(9, "Set1")[c(2)],
-              height = 0.5, alpha = 0.5) +
+              fill = brewer.pal(9, "Set1")[c(9)], 
+              color = brewer.pal(9, "Set1")[c(9)],
+              height = 0.5, alpha = 0.3) +
   geom_histogram(alpha = 0.5, aes(daily_delta_weight), 
-                 fill = brewer.pal(9, "Set1")[c(2)], 
-                 binwidth = 1) +
+                 fill = brewer.pal(9, "Set1")[c(9)], 
+                 binwidth = 1, alpha = 0.3) +
   luke_theme +
-  theme(axis.title.x = element_text(hjust = 0.1),
+  theme(axis.title.x = element_text(hjust = 0.1, colour = "grey70"),
+        axis.ticks.x = element_line(colour = "grey70"),
+        axis.text.x = element_text(colour = "grey70"),
         axis.title.y = element_blank(),
         axis.text.y = element_blank(),
         axis.ticks.y = element_blank(),
@@ -3229,8 +3655,8 @@ weight_dist_plot <-
         plot.margin = margin(0, 0, 0, 0.5, "cm")) +
   ylab(expression(italic(N)[males])) +
   xlab("daily body mass change (g)") +
-  scale_x_continuous(limits = c(min(cap_05_09_23_std_pca_delta_odba$daily_delta_weight, na.rm = TRUE), 
-                                max(cap_05_09_23_std_pca_delta_odba$daily_delta_weight, na.rm = TRUE) * 1.05)) +
+  scale_x_continuous(limits = c(min(cap_05_09_23_std_pca_delta_odba$daily_delta_weight, na.rm = TRUE) * 1.15, 
+                                max(cap_05_09_23_std_pca_delta_odba$daily_delta_weight, na.rm = TRUE) * 1.15)) +
   scale_y_continuous(limits = c(0, 24),
                      breaks = c(0, 5, 10, 15), position = "left") +
   coord_flip()
@@ -3284,18 +3710,14 @@ for(i in 1:nboots){
 coefs_boot_output_df <- do.call(bind_rows, coefs_boot_output)
 fits_boot_output_df <- do.call(bind_rows, fits_boot_output)
 
-# avgODBA_delta_boot_plot <-
 ggplot() +
   geom_point(data = cap_05_09_23_std_pca_delta_odba,
-             aes(x = gm_ODBA, y = delta_weight),
+             aes(x = gm_ODBA, y = daily_delta_weight),
              alpha = 0.4,
              shape = 19,  
              color = brewer.pal(9, "Set1")[c(2)]) +
   geom_line(data = fits_boot_output_df, aes(x = gm_ODBA, y = fit, group = boot),
-            lwd = 0.5, alpha = 0.05) +
-  # geom_ribbon(data = mod_gmODBA_delta_fits, aes(x = gm_ODBA, 
-  #                                              ymax = upper, ymin = lower),
-  #             lwd = 1, alpha = 0.25) +
+            lwd = 0.5, color = brewer.pal(9, "Set1")[c(2)], alpha = 0.05) +
   luke_theme +
   theme(panel.border = element_blank(),
         plot.margin = margin(0, 0, 0, 0.5, "cm"),
@@ -3337,80 +3759,113 @@ ggplot(data = coefs_boot_output_df, aes(x = Estimate, y = parameter, fill = fact
 
 
 ```{r}
-## Explore spatial variation in ODBA around the study site
-
-library(sf)
-library(gstat) # For interpolation
-library(raster) # For creating raster objects
-library(mapview)
-library(leaflet)
-library(moveVis)
-library(move)
-mapviewOptions(basemaps = c("Esri.WorldImagery"))
-GPS_23 %>% 
-  filter(tagID %in% first_caps_2023$tagID) %>% 
-  filter(!is.na(longitude) | !is.na(latitude)) %>% 
-  st_as_sf(coords = c("longitude", "latitude"), 
-           crs = 4326) %>% 
-  mapview()
-
-GPS_23_ <- 
-  GPS_23 %>% 
-  filter(tagID %in% first_caps_2023$tagID) %>% 
-  filter(!is.na(longitude) | !is.na(latitude))
-
-ODBA_23_ <-
-  ODBA_23 %>% 
-  filter(tagID %in% first_caps_2023$tagID) %>% 
-  as.data.frame() %>% 
-  mutate(timestamp_round = lubridate::round_date(timestamp, "15 minutes")) %>% 
-  dplyr::select(tagID, timestamp, timestamp_round, ODBA) %>% 
-  arrange(tagID, timestamp) %>% 
-  group_by(tagID, timestamp_round) %>% 
-  summarise(ODBA_15m = mean(ODBA, na.rm = TRUE)/10000) %>% 
-  ungroup()
-
-GPS_23_move <- df2move(df = GPS_23_, track_id = "tagID", 
-                        proj = "+init=epsg:4326 +proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0",
-                        x = "longitude", y = "latitude", time = "timestamp")
-
-unique(timestamps(GPS_23_move))
-timeLag(GPS_23_move, unit = "mins")
-GPS_23_move_align <- 
-  align_move(GPS_23_move, res = 15, unit = "mins")
-
-GPS_23_move_align_ODBA <- 
-  as.data.frame(GPS_23_move_align) %>% 
-  mutate(timestamp_round = round(timestamps, "mins"),
-         trackId = substr(trackId, 2, 5)) %>% 
-  rename(tagID = trackId) %>%
-  mutate(move_inter = rownames(.)) %>% 
-  left_join(., ODBA_23_, by = c("tagID", "timestamp_round")) %>% 
-  filter(!is.na(ODBA_15m)) %>% 
-  mutate(ODBA_log = log(ODBA_15m + 1)) %>% 
-  arrange(tagID, timestamp_round)
-
-GPS_23_move_align_ODBA %>% 
-  mutate(ODBA_log = log(ODBA_15m + 1, base = 2)) %>% 
-  separate(move_inter, into = c("XtagID", "ori_time", "int_time"), sep = "\\.") %>% 
-  group_by(XtagID, ori_time) %>% 
-  summarise(ODBA_log = mean(ODBA_log),
-            lon = dplyr::first(x),
-            lat = dplyr::first(y),
-            ODBA_15m = mean(ODBA_15m)) %>% 
-  dplyr::select(XtagID, ODBA_log, ODBA_15m, lon, lat) %>% 
-  # filter(ODBA_log < 1) %>% 
-  # ggplot() +
-  # geom_histogram(aes(ODBA_log))
-  # filter(tagID == "0457") %>% 
-  st_as_sf(coords = c("lon", "lat"), 
-           crs = 4326) %>% 
-  mapview(zcol = "ODBA_log")
-
-unique(unlist(timeLag(GPS_23_move_align, units = "mins")))
-
-cap_05_09_23_std_pca_ten %>% filter(year_ == 2023) %>% arrange(desc(tenure))
-ID_tagID_key %>% filter(capture_id == "69502_2023") %>% pull(tagID)
+# ## The Acceloscape
+# ## Explore spatial variation in ODBA around the study site
+# 
+# library(sf)
+# library(gstat) # For interpolation
+# library(raster) # For creating raster objects
+# library(mapview)
+# library(leaflet)
+# library(moveVis)
+# library(move)
+# 
+# mapviewOptions(basemaps = c("Esri.WorldImagery"))
+# GPS_23 %>% 
+#   filter(tagID %in% first_caps_2023$tagID) %>% 
+#   filter(!is.na(longitude) | !is.na(latitude)) %>% 
+#   st_as_sf(coords = c("longitude", "latitude"), 
+#            crs = 4326) %>% 
+#   mapview()
+# 
+# GPS_23_ <- 
+#   GPS_23 %>% 
+#   filter(tagID %in% first_caps_2023$tagID) %>% 
+#   filter(!is.na(longitude) | !is.na(latitude)) %>% 
+#   arrange(tagID, timestamp) %>% 
+#   mutate(timestamp_round = lubridate::round_date(timestamp, "1 minutes")) %>% 
+#   rename(timestamp_GPS = timestamp) %>% 
+#   dplyr::select(tagID, timestamp_GPS, timestamp_round, 
+#                 latitude, longitude, altitude)
+# 
+# ODBA_23_ <-
+#   ODBA_23 %>% 
+#   filter(tagID %in% first_caps_2023$tagID) %>% 
+#   as.data.frame() %>% 
+#   mutate(timestamp_round = lubridate::round_date(timestamp, "1 minutes"),
+#          ODBA_g = ODBA/10000) %>% 
+#   mutate(ODBA_g_log = log(ODBA_g + 1)) %>%
+#   mutate(activity = ifelse(ODBA_g_log > 0.1, 1, 0)) %>% 
+#   rename(timestamp_ODBA = timestamp) %>% 
+#   dplyr::select(tagID, timestamp_ODBA, timestamp_round, ODBA_g, ODBA_g_log, activity)
+# 
+# GPS_ODBA_23_ <- 
+#   left_join(GPS_23_, ODBA_23_, by = c("tagID", "timestamp_round")) %>% 
+#   mutate(time_diff = timestamp_GPS - timestamp_ODBA) %>% 
+#   na.omit() %>% 
+#   
+# GPS_ODBA_23_sf <- 
+#   st_as_sf(coords = c("longitude", "latitude"),
+#            crs = 4326)
+# 
+# hist(GPS_ODBA_23_$ODBA_g_log)
+# 
+# GPS_ODBA_23_ %>% 
+#   st_as_sf(coords = c("longitude", "latitude"),
+#            crs = 4326) %>% 
+#   mapview(zcol = "activity")
+# 
+# hist(as.numeric(GPS_ODBA_23_$time_diff))
+#   
+# 
+#   # mutate(timestamp_round = lubridate::round_date(timestamp, "15 minutes")) %>% 
+#   # dplyr::select(tagID, timestamp, timestamp_round, ODBA) %>% 
+#   # arrange(tagID, timestamp) %>% 
+#   # group_by(tagID, timestamp_round) %>% 
+#   # summarise(ODBA_15m = mean(ODBA, na.rm = TRUE)/10000) %>% 
+#   # ungroup()
+# 
+# GPS_23_move <- df2move(df = GPS_23_, track_id = "tagID", 
+#                         proj = "+init=epsg:4326 +proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0",
+#                         x = "longitude", y = "latitude", time = "timestamp")
+# 
+# unique(timestamps(GPS_23_move))
+# timeLag(GPS_23_move, unit = "mins")
+# GPS_23_move_align <- 
+#   align_move(GPS_23_move, res = 15, unit = "mins")
+# 
+# GPS_23_move_align_ODBA <- 
+#   as.data.frame(GPS_23_move_align) %>% 
+#   mutate(timestamp_round = round(timestamps, "mins"),
+#          trackId = substr(trackId, 2, 5)) %>% 
+#   rename(tagID = trackId) %>%
+#   mutate(move_inter = rownames(.)) %>% 
+#   left_join(., ODBA_23_, by = c("tagID", "timestamp_round")) %>% 
+#   filter(!is.na(ODBA_15m)) %>% 
+#   mutate(ODBA_log = log(ODBA_15m + 1)) %>% 
+#   arrange(tagID, timestamp_round)
+# 
+# GPS_23_move_align_ODBA %>% 
+#   mutate(ODBA_log = log(ODBA_15m + 1, base = 2)) %>% 
+#   separate(move_inter, into = c("XtagID", "ori_time", "int_time"), sep = "\\.") %>% 
+#   group_by(XtagID, ori_time) %>% 
+#   summarise(ODBA_log = mean(ODBA_log),
+#             lon = dplyr::first(x),
+#             lat = dplyr::first(y),
+#             ODBA_15m = mean(ODBA_15m)) %>% 
+#   dplyr::select(XtagID, ODBA_log, ODBA_15m, lon, lat) %>% 
+#   # filter(ODBA_log < 1) %>% 
+#   # ggplot() +
+#   # geom_histogram(aes(ODBA_log))
+#   filter(tagID == "0457") %>%
+#   st_as_sf(coords = c("lon", "lat"), 
+#            crs = 4326) %>% 
+#   mapview(zcol = "ODBA_log")
+# 
+# unique(unlist(timeLag(GPS_23_move_align, units = "mins")))
+# 
+# cap_05_09_23_std_pca_ten %>% filter(year_ == 2023) %>% arrange(desc(tenure))
+# ID_tagID_key %>% filter(capture_id == "69502_2023") %>% pull(tagID)
 ```
 
 
