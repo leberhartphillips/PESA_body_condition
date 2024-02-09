@@ -3992,7 +3992,7 @@ mod_delta_2_lmer <-
 ```
 
 
-```{r}
+```{r, fig.height=10, fig.width=5, fig.align='center'}
 tbl_regression(mod_delta_2_lmer, intercept = TRUE)
 
 mod_delta_2_lmer_fits <- 
